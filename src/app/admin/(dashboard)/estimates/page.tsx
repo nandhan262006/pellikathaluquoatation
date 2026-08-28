@@ -1,4 +1,6 @@
 import { getEstimateLeads } from "@/lib/estimator/lead-actions";
+import { getAdminMarket } from "@/lib/admin/market";
+import { COUNTRY_CODES } from "@/lib/estimator/format";
 import { MarkCompleteButton } from "@/components/admin/mark-complete-button";
 import { DeleteEstimateButton } from "@/components/admin/delete-estimate-button";
 import { EstimateDetail } from "@/components/admin/estimate-detail";
@@ -20,7 +22,8 @@ function extractEstimatedDate(estimateData: string): string | null {
 }
 
 export default async function AdminEstimatesPage() {
-  const leads = await getEstimateLeads();
+  const market = await getAdminMarket();
+  const leads = await getEstimateLeads(market);
 
   return (
     <div>
@@ -56,7 +59,9 @@ export default async function AdminEstimatesPage() {
               return (
                 <tr key={lead.id} className="border-t">
                   <td className="p-3 font-medium text-sm">{lead.clientName}</td>
-                  <td className="p-3 text-sm">{lead.clientPhone}</td>
+                  <td className="p-3 text-sm">
+                    {COUNTRY_CODES[lead.market === "US" ? "US" : "IN"]} {lead.clientPhone}
+                  </td>
                   <td className="p-3 text-sm">{lead.eventName || lead.eventType}</td>
                   <td className="p-3 text-sm text-muted-foreground">
                     {eventDate || "\u2014"}

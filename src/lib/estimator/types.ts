@@ -9,6 +9,9 @@
 
 export type ID = string;
 
+/** Target market. IN uses INR pricing, US uses USD pricing. */
+export type Market = "IN" | "US";
+
 export interface PriceRange {
   value: number;
 }
@@ -28,6 +31,17 @@ export interface CoverageOption {
 
 /** An optional add-on service for a sub-event (Step 5). */
 export interface AddOnOption {
+  id: ID;
+  label: string;
+  icon: string;
+  description: string;
+}
+
+/** Kind of a catalog option (coverage or add-on). */
+export type OptionKind = "coverage" | "addon";
+
+/** A single catalog option definition resolved by id. */
+export interface OptionDefinition {
   id: ID;
   label: string;
   icon: string;
@@ -77,6 +91,8 @@ export interface AlbumDefaults {
   basePages: number;
   maxPages: number;
   maxAlbums: number;
+  /** Per-page base rate (in the market's currency) used to price albums. */
+  pageRate: number;
 }
 
 /**
@@ -135,10 +151,14 @@ export interface EventTemplate {
   tagline?: string;
   description?: string;
   icon: string;
+  /** Which market this template belongs to (IN or US). */
+  market: Market;
   /** Coverage option ids offered by this event (usually the global five). */
   coverageOptions: ID[];
   /** Add-on option ids offered by this event. */
   addOnOptions: ID[];
+  /** Option catalog (labels, icons, descriptions) keyed by option id. */
+  optionCatalog?: Record<ID, OptionDefinition>;
   /** Default per-sub-event coverage prices. */
   defaultCoveragePrices: Record<ID, PriceRange>;
   /** Default per-sub-event add-on prices. */
@@ -177,6 +197,8 @@ export interface EstimatorState {
   clientName: string;
   clientPhone: string;
   estimatedDate: string;
+  /** Client's chosen market (IN or US). Determines events, prices and phone code. */
+  market: Market;
   eventTypeId: ID | null;
   /** Selected sub-event ids, order preserved. */
   selectedSubEvents: ID[];

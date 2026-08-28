@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,7 +12,10 @@ import {
   upsertSubEvent,
   deleteSubEvent,
   deleteTemplate,
+  createOption,
+  deleteOption,
 } from "@/lib/admin/template-actions";
+import type { Market, OptionKind } from "@/lib/estimator/types";
 
 interface SubEvent {
   id: number;
@@ -33,6 +36,7 @@ interface Template {
   tagline: string;
   description: string;
   icon: string;
+  market: Market;
   isActive: number;
   defaultMaxReels: number;
   defaultReelPrice: number;
@@ -42,42 +46,39 @@ interface Template {
   subEvents: SubEvent[];
 }
 
-const COVERAGE_IDS = [
-  "traditional_photography", "traditional_videography",
-  "candid_photography", "cinematic_videography", "drone",
-];
+interface CatalogOption {
+  id: number;
+  optionId: string;
+  kind: OptionKind;
+  label: string;
+  icon: string;
+  description: string;
+  sortOrder: number;
+}
 
-const ADDON_IDS = [
-  "led_screen", "live_streaming", "ai_gallery", "instant_teaser",
-];
+const ICONS = ["heart", "cake", "flower", "baby", "home", "gift", "camera", "video", "aperture", "film", "drone", "monitor", "radio", "wand"];
 
-const COVERAGE_LABELS: Record<string, string> = {
-  traditional_photography: "Traditional Photography",
-  traditional_videography: "Traditional Videography",
-  candid_photography: "Candid Photography",
-  cinematic_videography: "Cinematic Videography",
-  drone: "Drone",
-};
+type Tab = "events" | "subevents" | "reels" | "prices" | "options";
 
-const ADDON_LABELS: Record<string, string> = {
-  led_screen: "LED Screen",
-  live_streaming: "Live Streaming",
-  ai_gallery: "AI Gallery",
-  instant_teaser: "Instant Teaser / Same-Day",
-};
-
-const ICONS = ["heart", "cake", "flower", "baby", "home", "gift", "camera"];
-
-type Tab = "events" | "subevents" | "reels" | "prices";
-
-export function EditorShell({ templates }: { templates: Template[] }) {
+export function EditorShell({
+  templates,
+  market,
+  options,
+}: {
+  templates: Template[];
+  market: Market;
+  options: CatalogOption[];
+}) {
   const [tab, setTab] = useState<Tab>("events");
   const [selectedTemplate, setSelectedTemplate] = useState<number | null>(null);
+
+  const coverageOptions = options.filter((o) => o.kind === "coverage");
+  const addOnOptions = options.filter((o) => o.kind === "addon");
 
   return (
     <div className="flex flex-col gap-6">
       <div className="flex gap-1 border-b pb-1">
-        {(["events", "subevents", "reels", "prices"] as Tab[]).map((t) => (
+        {(["events", "subevents", "reels", "prices", "options"] as Tab[]).map((t) => (
           <button
             key={t}
             onClick={() => setTab(t)}
@@ -89,12 +90,15 @@ export function EditorShell({ templates }: { templates: Template[] }) {
           >
             {t === "events" ? "1. Event Types" :
              t === "subevents" ? "2. Sub-Events" :
-             t === "reels" ? "3. Reels & Albums" : "4. Default Prices"}
+             t === "reels" ? "3. Reels & Albums" :
+             t === "prices" ? "4. Default Prices" : "5. Add-ons & Coverage"}
           </button>
         ))}
       </div>
 
-      {tab === "events" && <EventsEditor templates={templates} />}
+      {tab === "events" && (
+        <EventsEditor templates={templates} market={market} coverageOptions={coverageOptions} addOnOptions={addOnOptions} />
+      )}
       {tab === "subevents" && (
         <SubEventsEditor
           templates={templates}
@@ -103,20 +107,33 @@ export function EditorShell({ templates }: { templates: Template[] }) {
         />
       )}
       {tab === "reels" && <ReelsEditor templates={templates} />}
-      {tab === "prices" && <PricesEditor templates={templates} />}
+      {tab === "prices" && (
+        <PricesEditor templates={templates} coverageOptions={coverageOptions} addOnOptions={addOnOptions} />
+      )}
+      {tab === "options" && <OptionsEditor options={options} />}
     </div>
   );
 }
 
 const NEW_ID = -1;
 
-function EventsEditor({ templates }: { templates: Template[] }) {
+function EventsEditor({
+  templates,
+  market,
+  coverageOptions,
+  addOnOptions,
+}: {
+  templates: Template[];
+  market: Market;
+  coverageOptions: CatalogOption[];
+  addOnOptions: CatalogOption[];
+}) {
   const router = useRouter();
   const [editing, setEditing] = useState<number | null>(null);
   const [form, setForm] = useState({
     typeId: "", name: "", tagline: "", description: "",
     icon: "heart", isActive: 1 as number,
-    defaultMaxReels: 3, defaultReelPrice: 6000,
+    defaultMaxReels: 3, defaultReelPrice: market === "US" ? 75 : 6000,
     coverageOptions: [] as string[],
     addOnOptions: [] as string[],
   });
@@ -133,7 +150,7 @@ function EventsEditor({ templates }: { templates: Template[] }) {
       });
       setEditing(t.id);
     } else {
-      setForm({ typeId: "", name: "", tagline: "", description: "", icon: "heart", isActive: 1, defaultMaxReels: 3, defaultReelPrice: 6000, coverageOptions: [], addOnOptions: [] });
+      setForm({ typeId: "", name: "", tagline: "", description: "", icon: "heart", isActive: 1, defaultMaxReels: 3, defaultReelPrice: market === "US" ? 75 : 6000, coverageOptions: [], addOnOptions: [] });
       setEditing(NEW_ID);
     }
   };
@@ -142,7 +159,7 @@ function EventsEditor({ templates }: { templates: Template[] }) {
     try {
       const templateId = editing === NEW_ID ? undefined : editing ?? undefined;
       const existing = typeof templateId === "number" ? templates.find((t) => t.id === templateId) : null;
-      await upsertTemplate({ ...form, id: templateId, defaultPrices: existing?.defaultPrices });
+      await upsertTemplate({ ...form, id: templateId, market: existing?.market ?? market, defaultPrices: existing?.defaultPrices });
       toast.success("Saved");
       setEditing(null);
       router.refresh();
@@ -177,22 +194,22 @@ function EventsEditor({ templates }: { templates: Template[] }) {
           <div className="sm:col-span-2">
             <Label className="text-xs mb-1 block">Coverage Options</Label>
             <div className="flex flex-wrap gap-x-4 gap-y-1">
-              {COVERAGE_IDS.map((cid) => (
-                <label key={cid} className="flex items-center gap-1.5 text-xs">
+              {coverageOptions.map((o) => (
+                <label key={o.optionId} className="flex items-center gap-1.5 text-xs">
                   <input
                     type="checkbox"
                     className="size-3.5"
-                    checked={form.coverageOptions.includes(cid)}
+                    checked={form.coverageOptions.includes(o.optionId)}
                     onChange={(e) =>
                       setForm({
                         ...form,
                         coverageOptions: e.target.checked
-                          ? [...form.coverageOptions, cid]
-                          : form.coverageOptions.filter((c) => c !== cid),
+                          ? [...form.coverageOptions, o.optionId]
+                          : form.coverageOptions.filter((c) => c !== o.optionId),
                       })
                     }
                   />
-                  {COVERAGE_LABELS[cid]}
+                  {o.label}
                 </label>
               ))}
             </div>
@@ -200,22 +217,22 @@ function EventsEditor({ templates }: { templates: Template[] }) {
           <div className="sm:col-span-2">
             <Label className="text-xs mb-1 block">Add-on Options</Label>
             <div className="flex flex-wrap gap-x-4 gap-y-1">
-              {ADDON_IDS.map((aid) => (
-                <label key={aid} className="flex items-center gap-1.5 text-xs">
+              {addOnOptions.map((o) => (
+                <label key={o.optionId} className="flex items-center gap-1.5 text-xs">
                   <input
                     type="checkbox"
                     className="size-3.5"
-                    checked={form.addOnOptions.includes(aid)}
+                    checked={form.addOnOptions.includes(o.optionId)}
                     onChange={(e) =>
                       setForm({
                         ...form,
                         addOnOptions: e.target.checked
-                          ? [...form.addOnOptions, aid]
-                          : form.addOnOptions.filter((a) => a !== aid),
+                          ? [...form.addOnOptions, o.optionId]
+                          : form.addOnOptions.filter((a) => a !== o.optionId),
                       })
                     }
                   />
-                  {ADDON_LABELS[aid]}
+                  {o.label}
                 </label>
               ))}
             </div>
@@ -401,7 +418,7 @@ function ReelsEditor({ templates }: { templates: Template[] }) {
       await upsertTemplate({
         id: editing,
         typeId: t.typeId, name: t.name, tagline: t.tagline,
-        description: t.description, icon: t.icon, isActive: t.isActive,
+        description: t.description, icon: t.icon, market: t.market, isActive: t.isActive,
         defaultMaxReels: maxReels,
         defaultReelPrice: t.defaultReelPrice,
         coverageOptions: safeParse(t.coverageOptions) ?? [], addOnOptions: safeParse(t.addOnOptions) ?? [],
@@ -444,7 +461,15 @@ function ReelsEditor({ templates }: { templates: Template[] }) {
   );
 }
 
-function PricesEditor({ templates }: { templates: Template[] }) {
+function PricesEditor({
+  templates,
+  coverageOptions,
+  addOnOptions,
+}: {
+  templates: Template[];
+  coverageOptions: CatalogOption[];
+  addOnOptions: CatalogOption[];
+}) {
   const router = useRouter();
   const [selectedTemplate, setSelectedTemplate] = useState<number | null>(null);
   const [prices, setPrices] = useState<Record<string, string>>({});
@@ -453,9 +478,9 @@ function PricesEditor({ templates }: { templates: Template[] }) {
 
   const tmpl = templates.find((t) => t.id === selectedTemplate);
 
-  useEffect(() => {
-    if (!tmpl) { setPrices({}); setAddonPrices({}); setReelPrice(""); return; }
-    const parsed = safeParse<{ coverage?: Record<string, number>; addOns?: Record<string, number>; reel?: { value: number } }>(tmpl.defaultPrices);
+  const selectTemplate = (t: Template) => {
+    setSelectedTemplate(t.id);
+    const parsed = safeParse<{ coverage?: Record<string, number>; addOns?: Record<string, number>; reel?: { value: number } }>(t.defaultPrices);
     const cov: Record<string, string> = {};
     const add: Record<string, string> = {};
     if (parsed?.coverage) {
@@ -466,8 +491,8 @@ function PricesEditor({ templates }: { templates: Template[] }) {
     }
     setPrices(cov);
     setAddonPrices(add);
-    setReelPrice(parsed?.reel?.value ? String(parsed.reel.value) : String(tmpl.defaultReelPrice));
-  }, [selectedTemplate]);
+    setReelPrice(parsed?.reel?.value ? String(parsed.reel.value) : String(t.defaultReelPrice));
+  };
 
   const save = async () => {
     if (!selectedTemplate || !tmpl) return;
@@ -481,7 +506,7 @@ function PricesEditor({ templates }: { templates: Template[] }) {
       await upsertTemplate({
         id: selectedTemplate,
         typeId: tmpl.typeId, name: tmpl.name, tagline: tmpl.tagline,
-        description: tmpl.description, icon: tmpl.icon, isActive: tmpl.isActive,
+        description: tmpl.description, icon: tmpl.icon, market: tmpl.market, isActive: tmpl.isActive,
         defaultMaxReels: tmpl.defaultMaxReels,
         defaultReelPrice: reelPrice ? Number(reelPrice) : tmpl.defaultReelPrice,
         coverageOptions: safeParse(tmpl.coverageOptions) ?? [],
@@ -501,7 +526,7 @@ function PricesEditor({ templates }: { templates: Template[] }) {
         {templates.map((t) => (
           <button
             key={t.id}
-            onClick={() => setSelectedTemplate(t.id)}
+            onClick={() => selectTemplate(t)}
             className={`rounded-[9999px] border px-3 py-1 text-sm transition-colors ${
               selectedTemplate === t.id ? "border-primary bg-primary/5" : "border-border hover:bg-muted"
             }`}
@@ -516,15 +541,15 @@ function PricesEditor({ templates }: { templates: Template[] }) {
           <div>
             <h3 className="text-sm font-medium mb-3">Coverage Prices</h3>
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              {COVERAGE_IDS.map((cid) => (
-                <div key={cid}>
-                  <Label className="text-xs">{COVERAGE_LABELS[cid]}</Label>
+              {coverageOptions.map((o) => (
+                <div key={o.optionId}>
+                  <Label className="text-xs">{o.label}</Label>
                   <Input
                     type="number"
                     className="h-8 text-xs"
                     placeholder="Price"
-                    value={prices[cid] ?? ""}
-                    onChange={(e) => setPrices({ ...prices, [cid]: e.target.value })}
+                    value={prices[o.optionId] ?? ""}
+                    onChange={(e) => setPrices({ ...prices, [o.optionId]: e.target.value })}
                   />
                 </div>
               ))}
@@ -534,15 +559,15 @@ function PricesEditor({ templates }: { templates: Template[] }) {
           <div>
             <h3 className="text-sm font-medium mb-3">Add-on Prices</h3>
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              {ADDON_IDS.map((aid) => (
-                <div key={aid}>
-                  <Label className="text-xs">{ADDON_LABELS[aid]}</Label>
+              {addOnOptions.map((o) => (
+                <div key={o.optionId}>
+                  <Label className="text-xs">{o.label}</Label>
                   <Input
                     type="number"
                     className="h-8 text-xs"
                     placeholder="Price"
-                    value={addonPrices[aid] ?? ""}
-                    onChange={(e) => setAddonPrices({ ...addonPrices, [aid]: e.target.value })}
+                    value={addonPrices[o.optionId] ?? ""}
+                    onChange={(e) => setAddonPrices({ ...addonPrices, [o.optionId]: e.target.value })}
                   />
                 </div>
               ))}
@@ -568,6 +593,123 @@ function PricesEditor({ templates }: { templates: Template[] }) {
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+function OptionsEditor({ options }: { options: CatalogOption[] }) {
+  const router = useRouter();
+  const [adding, setAdding] = useState(false);
+  const [form, setForm] = useState<{
+    optionId: string;
+    kind: OptionKind;
+    label: string;
+    icon: string;
+    description: string;
+  }>({ optionId: "", kind: "addon", label: "", icon: "wand", description: "" });
+
+  const coverageOptions = options.filter((o) => o.kind === "coverage");
+  const addOnOptions = options.filter((o) => o.kind === "addon");
+
+  const save = async () => {
+    if (!form.optionId || !form.label) { toast.error("ID and label required"); return; }
+    try {
+      await createOption(form);
+      toast.success("Option added");
+      setAdding(false);
+      setForm({ optionId: "", kind: "addon", label: "", icon: "wand", description: "" });
+      router.refresh();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Failed to add option");
+    }
+  };
+
+  const del = async (optionId: string) => {
+    if (!confirm(`Delete "${optionId}"? Templates that reference it will stop showing it.`)) return;
+    try {
+      await deleteOption(optionId);
+      toast.success("Deleted");
+      router.refresh();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Failed to delete");
+    }
+  };
+
+  return (
+    <div className="flex flex-col gap-6">
+      <div className="flex gap-2">
+        <Button size="sm" onClick={() => setAdding(true)}>+ New Add-on / Coverage Option</Button>
+      </div>
+
+      {adding && (
+        <div className="rounded-xl border p-4 grid gap-3 sm:grid-cols-2">
+          <div>
+            <Label className="text-xs">Kind</Label>
+            <select
+              className="flex h-9 w-full rounded-lg border border-input bg-background px-3 py-1 text-sm"
+              value={form.kind}
+              onChange={(e) => setForm({ ...form, kind: e.target.value as OptionKind })}
+            >
+              <option value="addon">Add-on</option>
+              <option value="coverage">Coverage</option>
+            </select>
+          </div>
+          <div>
+            <Label className="text-xs">ID</Label>
+            <Input value={form.optionId} placeholder="photo_booth" onChange={(e) => setForm({ ...form, optionId: e.target.value })} />
+          </div>
+          <div>
+            <Label className="text-xs">Label</Label>
+            <Input value={form.label} placeholder="Photo Booth" onChange={(e) => setForm({ ...form, label: e.target.value })} />
+          </div>
+          <div>
+            <Label className="text-xs">Icon</Label>
+            <select
+              className="flex h-9 w-full rounded-lg border border-input bg-background px-3 py-1 text-sm"
+              value={form.icon}
+              onChange={(e) => setForm({ ...form, icon: e.target.value })}
+            >
+              {ICONS.map((i) => <option key={i} value={i}>{i}</option>)}
+            </select>
+          </div>
+          <div className="sm:col-span-2">
+            <Label className="text-xs">Description</Label>
+            <Input value={form.description} placeholder="Short description shown in the estimator" onChange={(e) => setForm({ ...form, description: e.target.value })} />
+          </div>
+          <div className="sm:col-span-2 flex gap-2">
+            <Button size="sm" onClick={save}>Save</Button>
+            <Button size="sm" variant="outline" onClick={() => setAdding(false)}>Cancel</Button>
+          </div>
+        </div>
+      )}
+
+      <div className="grid gap-6 md:grid-cols-2">
+        <div className="flex flex-col gap-1">
+          <h3 className="text-sm font-medium mb-1">Add-ons</h3>
+          {addOnOptions.map((o) => (
+            <div key={o.optionId} className="flex items-center justify-between rounded-lg border p-2 text-sm">
+              <div className="flex items-center gap-2 min-w-0">
+                <span className="font-medium truncate">{o.label}</span>
+                <span className="text-xs text-muted-foreground truncate">({o.optionId})</span>
+              </div>
+              <Button variant="ghost" size="xs" className="text-destructive" onClick={() => del(o.optionId)}>×</Button>
+            </div>
+          ))}
+        </div>
+
+        <div className="flex flex-col gap-1">
+          <h3 className="text-sm font-medium mb-1">Coverage</h3>
+          {coverageOptions.map((o) => (
+            <div key={o.optionId} className="flex items-center justify-between rounded-lg border p-2 text-sm">
+              <div className="flex items-center gap-2 min-w-0">
+                <span className="font-medium truncate">{o.label}</span>
+                <span className="text-xs text-muted-foreground truncate">({o.optionId})</span>
+              </div>
+              <Button variant="ghost" size="xs" className="text-destructive" onClick={() => del(o.optionId)}>×</Button>
+            </div>
+          ))}
+        </div>
+      </div>
     </div>
   );
 }

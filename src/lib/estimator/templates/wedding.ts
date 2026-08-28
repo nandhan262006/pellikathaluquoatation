@@ -72,6 +72,7 @@ export const weddingTemplate: EventTemplate = {
   description:
     "Build a complete photography & videography package across all your wedding functions.",
   icon: "heart",
+  market: "IN",
   coverageOptions: ALL_COVERAGE,
   addOnOptions: ALL_ADDONS,
   defaultCoveragePrices: DEFAULT_COVERAGE_PRICES,

@@ -5,7 +5,7 @@
  * icons and descriptions in one place means a copy change updates every event
  * template at once, and a future CMS template builder only stores ids + prices.
  */
-import type { AddOnOption, CoverageOption, ID } from "./types";
+import type { AddOnOption, CoverageOption, ID, OptionDefinition } from "./types";
 
 export const COVERAGE_OPTIONS: CoverageOption[] = [
   {
@@ -76,4 +76,11 @@ export function getCoverageOption(id: ID) {
 
 export function getAddOnOption(id: ID) {
   return ADD_ON_BY_ID.get(id);
+}
+
+export function buildOptionCatalog(): Record<ID, OptionDefinition> {
+  const map: Record<ID, OptionDefinition> = {};
+  for (const o of COVERAGE_OPTIONS) map[o.id] = o;
+  for (const o of ADD_ON_OPTIONS) map[o.id] = o;
+  return map;
 }

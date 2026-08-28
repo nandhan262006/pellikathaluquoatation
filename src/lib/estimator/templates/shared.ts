@@ -62,6 +62,7 @@ export const ALBUM_DEFAULTS: AlbumDefaults = {
   basePages: 30,
   maxPages: 120,
   maxAlbums: 10,
+  pageRate: 600,
 };
 
 const COVERAGE_DELIVERABLE_LABELS: Record<ID, string> = {

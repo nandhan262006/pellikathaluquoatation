@@ -46,6 +46,7 @@ export const eventTemplate = sqliteTable("EventTemplate", {
   tagline: text("tagline").notNull().default(""),
   description: text("description").notNull().default(""),
   icon: text("icon").notNull().default("heart"),
+  market: text("market").notNull().default("IN"),
   isActive: integer("isActive").notNull().default(1),
   defaultMaxReels: integer("defaultMaxReels").notNull().default(3),
   defaultReelPrice: integer("defaultReelPrice").notNull().default(6000),
@@ -68,12 +69,23 @@ export const subEvent = sqliteTable("SubEvent", {
   templateId: integer("templateId").notNull().references(() => eventTemplate.id, { onDelete: "cascade" }),
 });
 
+export const optionCatalog = sqliteTable("OptionCatalog", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  optionId: text("optionId").notNull().unique(),
+  kind: text("kind").notNull(),
+  label: text("label").notNull(),
+  icon: text("icon").notNull().default("camera"),
+  description: text("description").notNull().default(""),
+  sortOrder: integer("sortOrder").notNull().default(0),
+});
+
 export const estimateLead = sqliteTable("EstimateLead", {
   id: integer("id").primaryKey({ autoIncrement: true }),
   clientName: text("clientName").notNull(),
   clientPhone: text("clientPhone").notNull(),
   eventType: text("eventType").notNull(),
   eventName: text("eventName").notNull().default(""),
+  market: text("market").notNull().default("IN"),
   estimateData: text("estimateData").notNull().default("{}"),
   status: text("status").notNull().default("pending"),
   createdAt: text("createdAt").notNull().default("(datetime('now'))"),

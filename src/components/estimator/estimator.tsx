@@ -47,6 +47,7 @@ function EstimatorShell() {
         clientPhone: state.clientPhone,
         eventType: state.eventTypeId,
         eventName: template?.name ?? "",
+        market: state.market,
         estimatedDate: state.estimatedDate,
         estimateData: estimateJSON,
       }).catch(() => {

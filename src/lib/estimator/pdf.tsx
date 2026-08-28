@@ -16,7 +16,7 @@ import {
 } from "@react-pdf/renderer";
 import fs from "fs";
 import path from "path";
-import { formatINRPlain } from "./format";
+import { formatMoneyPlain, COUNTRY_CODES } from "./format";
 import type {
   EstimateBreakdown,
   EstimatorState,
@@ -230,7 +230,7 @@ function withContinuationHeadings(chunks: PdfChunk[], prevChunks: PdfChunk[]): P
   return result;
 }
 
-function PdfPriceSection({ chunks }: { chunks: PdfChunk[] }) {
+function PdfPriceSection({ chunks, market }: { chunks: PdfChunk[]; market: "IN" | "US" }) {
   return (
     <>
       {chunks.map((c, i) => {
@@ -250,7 +250,7 @@ function PdfPriceSection({ chunks }: { chunks: PdfChunk[] }) {
               <Text>{c.label}</Text>
             </View>
             <Text style={styles.linePrice}>
-              {formatINRPlain(c.value)}
+              {formatMoneyPlain(c.value, market)}
             </Text>
           </View>
         );
@@ -402,7 +402,9 @@ function EstimatePdfDocument({ template, state, estimate, deliverableTexts }: Pd
         </View>
         <View style={styles.metaRow}>
           <Text style={styles.metaLabel}>Phone</Text>
-          <Text style={styles.metaValue}>{state.clientPhone}</Text>
+          <Text style={styles.metaValue}>
+            {COUNTRY_CODES[state.market]} {state.clientPhone}
+          </Text>
         </View>
         {estimatedDateDisplay && (
           <View style={styles.metaRow}>
@@ -430,7 +432,7 @@ function EstimatePdfDocument({ template, state, estimate, deliverableTexts }: Pd
         <View style={styles.divider} />
 
         <Text style={styles.sectionTitle}>Price breakdown</Text>
-        <PdfPriceSection chunks={page1Chunks} />
+        <PdfPriceSection chunks={page1Chunks} market={state.market} />
 
         {/* If everything fits, show total + deliverables on page 1 */}
         {!needsSecondPage && (
@@ -439,8 +441,8 @@ function EstimatePdfDocument({ template, state, estimate, deliverableTexts }: Pd
               <Text style={styles.totalLabel}>ESTIMATED TOTAL (APPROXIMATE)</Text>
               <Text style={styles.totalValue}>
                 {estimate.isEmpty
-                  ? formatINRPlain(0)
-                  : formatINRPlain(estimate.total)}
+                  ? formatMoneyPlain(0, state.market)
+                  : formatMoneyPlain(estimate.total, state.market)}
               </Text>
             </View>
 
@@ -467,7 +469,7 @@ function EstimatePdfDocument({ template, state, estimate, deliverableTexts }: Pd
         <Page size="A4" style={styles.page}>
           <Watermark />
           <Text style={styles.sectionTitle}>Price breakdown (continued)</Text>
-          <PdfPriceSection chunks={page2Chunks} />
+          <PdfPriceSection chunks={page2Chunks} market={state.market} />
 
           {/* If no page 3 needed, show total + deliverables on page 2 */}
           {!page2NeedsThirdPage && (
@@ -476,8 +478,8 @@ function EstimatePdfDocument({ template, state, estimate, deliverableTexts }: Pd
                 <Text style={styles.totalLabel}>ESTIMATED TOTAL (APPROXIMATE)</Text>
                 <Text style={styles.totalValue}>
                   {estimate.isEmpty
-                    ? formatINRPlain(0)
-                    : formatINRPlain(estimate.total)}
+                    ? formatMoneyPlain(0, state.market)
+                    : formatMoneyPlain(estimate.total, state.market)}
                 </Text>
               </View>
 
@@ -505,14 +507,14 @@ function EstimatePdfDocument({ template, state, estimate, deliverableTexts }: Pd
         <Page size="A4" style={styles.page}>
           <Watermark />
           <Text style={styles.sectionTitle}>Price breakdown (continued)</Text>
-          <PdfPriceSection chunks={page3Chunks} />
+          <PdfPriceSection chunks={page3Chunks} market={state.market} />
 
           <View style={styles.totalBox}>
             <Text style={styles.totalLabel}>ESTIMATED TOTAL (APPROXIMATE)</Text>
             <Text style={styles.totalValue}>
               {estimate.isEmpty
-                ? formatINRPlain(0)
-                : formatINRPlain(estimate.total)}
+                ? formatMoneyPlain(0, state.market)
+                : formatMoneyPlain(estimate.total, state.market)}
             </Text>
           </View>
 

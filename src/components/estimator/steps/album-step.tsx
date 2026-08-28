@@ -2,7 +2,7 @@
 
 import { Images } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { formatINR } from "@/lib/estimator/format";
+import { formatMoney } from "@/lib/estimator/format";
 import { useEstimator } from "@/lib/estimator/state-provider";
 import { Stepper, ToggleChip } from "../primitives";
 
@@ -107,7 +107,7 @@ export function AlbumStep() {
               <Images className="size-4 text-muted-foreground" />
               <span className="text-muted-foreground">Album estimate</span>
               <span className="ml-auto font-semibold tabular-nums">
-                {formatINR(albumItem.value)}
+                {formatMoney(albumItem.value, state.market)}
               </span>
             </div>
           ) : (

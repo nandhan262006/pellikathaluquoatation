@@ -10,6 +10,7 @@ import {
   Film,
   Flower2,
   Gift,
+  GraduationCap,
   Heart,
   Home,
   Monitor,
@@ -32,6 +33,7 @@ const MAP: Record<string, IconComponent> = {
   home: Home,
   gift: Gift,
   building: Building2,
+  graduation: GraduationCap,
   // coverage
   camera: Camera,
   video: Video,

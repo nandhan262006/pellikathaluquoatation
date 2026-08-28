@@ -4,12 +4,14 @@ import { revalidatePath } from "next/cache";
 import { requireAdmin, getDb } from "@/lib/db-utils";
 import { estimateLead } from "@/lib/db/schema";
 import { eq, desc } from "drizzle-orm";
+import type { Market } from "./types";
 
 export async function saveEstimateLead(data: {
   clientName: string;
   clientPhone: string;
   eventType: string;
   eventName: string;
+  market: Market;
   estimatedDate: string;
   estimateData: string;
 }) {
@@ -20,6 +22,7 @@ export async function saveEstimateLead(data: {
       clientPhone: data.clientPhone,
       eventType: data.eventType,
       eventName: data.eventName,
+      market: data.market,
       estimateData: data.estimateData,
     });
     return { success: true };
@@ -29,11 +32,15 @@ export async function saveEstimateLead(data: {
   }
 }
 
-export async function getEstimateLeads() {
+export async function getEstimateLeads(market: Market = "IN") {
   await requireAdmin();
   const db = getDb();
   try {
-    return await db.select().from(estimateLead).orderBy(desc(estimateLead.createdAt));
+    return await db
+      .select()
+      .from(estimateLead)
+      .where(eq(estimateLead.market, market))
+      .orderBy(desc(estimateLead.createdAt));
   } catch (e) {
     console.error("Failed to fetch estimate leads:", e);
     return [];

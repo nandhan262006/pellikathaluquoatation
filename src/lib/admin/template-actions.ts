@@ -2,14 +2,19 @@
 
 import { revalidatePath } from "next/cache";
 import { requireAdmin, getDb } from "@/lib/db-utils";
-import { eventTemplate, subEvent } from "@/lib/db/schema";
+import { eventTemplate, subEvent, optionCatalog } from "@/lib/db/schema";
 import { eq, asc } from "drizzle-orm";
+import type { Market, OptionKind } from "@/lib/estimator/types";
 
-export async function getTemplates() {
+export async function getTemplates(market: Market = "IN") {
   await requireAdmin();
   const db = getDb();
   try {
-    const templates = await db.select().from(eventTemplate).orderBy(asc(eventTemplate.name));
+    const templates = await db
+      .select()
+      .from(eventTemplate)
+      .where(eq(eventTemplate.market, market))
+      .orderBy(asc(eventTemplate.name));
     const subEvents = await db.select().from(subEvent).orderBy(asc(subEvent.sortOrder));
     return JSON.parse(JSON.stringify(
       templates.map((t) => ({
@@ -38,6 +43,7 @@ export async function upsertTemplate(data: {
   tagline: string;
   description: string;
   icon: string;
+  market: Market;
   isActive: number;
   defaultMaxReels: number;
   defaultReelPrice: number;
@@ -53,6 +59,7 @@ export async function upsertTemplate(data: {
     tagline: data.tagline,
     description: data.description,
     icon: data.icon,
+    market: data.market,
     isActive: data.isActive ? 1 : 0,
     defaultMaxReels: data.defaultMaxReels,
     defaultReelPrice: data.defaultReelPrice,
@@ -116,6 +123,51 @@ export async function deleteTemplate(id: number) {
   await requireAdmin();
   const db = getDb();
   await db.delete(eventTemplate).where(eq(eventTemplate.id, id));
+  revalidatePath("/admin/templates");
+  revalidatePath("/estimator");
+  return { success: true };
+}
+
+export async function getOptionCatalog() {
+  await requireAdmin();
+  const db = getDb();
+  try {
+    const rows = await db
+      .select()
+      .from(optionCatalog)
+      .orderBy(asc(optionCatalog.kind), asc(optionCatalog.sortOrder));
+    return JSON.parse(JSON.stringify(rows));
+  } catch {
+    return [];
+  }
+}
+
+export async function createOption(data: {
+  optionId: string;
+  kind: OptionKind;
+  label: string;
+  icon: string;
+  description: string;
+}) {
+  await requireAdmin();
+  const db = getDb();
+  await db.insert(optionCatalog).values({
+    optionId: data.optionId,
+    kind: data.kind,
+    label: data.label,
+    icon: data.icon,
+    description: data.description,
+    sortOrder: 99,
+  });
+  revalidatePath("/admin/templates");
+  revalidatePath("/estimator");
+  return { success: true };
+}
+
+export async function deleteOption(optionId: string) {
+  await requireAdmin();
+  const db = getDb();
+  await db.delete(optionCatalog).where(eq(optionCatalog.optionId, optionId));
   revalidatePath("/admin/templates");
   revalidatePath("/estimator");
   return { success: true };

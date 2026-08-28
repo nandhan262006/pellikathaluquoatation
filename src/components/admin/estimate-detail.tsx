@@ -2,20 +2,13 @@
 
 import { useState } from "react";
 import { ChevronDown, ChevronUp } from "lucide-react";
-import type { EstimateBreakdown, DeliverableGroup, EstimatorState } from "@/lib/estimator/types";
-
-function formatINR(amount: number): string {
-  return new Intl.NumberFormat("en-IN", {
-    style: "currency",
-    currency: "INR",
-    maximumFractionDigits: 0,
-  }).format(Math.round(amount));
-}
+import type { EstimateBreakdown, DeliverableGroup, EstimatorState, Market } from "@/lib/estimator/types";
+import { formatMoney } from "@/lib/estimator/format";
 
 const GROUP_ORDER = ["Coverage", "Add-on Services", "Reels", "Albums"];
 
 interface SavedEstimate {
-  state?: { selectedSubEvents?: unknown[] };
+  state?: Partial<EstimatorState>;
   estimate?: EstimateBreakdown;
   deliverables?: DeliverableGroup[];
 }
@@ -43,6 +36,7 @@ export function EstimateDetail({ estimateData }: { estimateData: string }) {
 
   const estimate = data.estimate;
   const deliverables = data.deliverables;
+  const market: Market = data.state?.market === "US" ? "US" : "IN";
 
   return (
     <div>
@@ -51,7 +45,7 @@ export function EstimateDetail({ estimateData }: { estimateData: string }) {
         className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
       >
         {open ? <ChevronUp className="size-3" /> : <ChevronDown className="size-3" />}
-        {estimate ? `Estimate: ${formatINR(estimate.total)}` : "View details"}
+        {estimate ? `Estimate: ${formatMoney(estimate.total, market)}` : "View details"}
       </button>
 
       {open && (
@@ -61,7 +55,7 @@ export function EstimateDetail({ estimateData }: { estimateData: string }) {
               <div className="flex items-center justify-between">
                 <span className="text-sm font-semibold">Estimated Total</span>
                 <span className="text-sm font-bold tabular-nums text-primary">
-                  {formatINR(estimate.total)}
+                  {formatMoney(estimate.total, market)}
                 </span>
               </div>
 
@@ -80,7 +74,7 @@ export function EstimateDetail({ estimateData }: { estimateData: string }) {
                       >
                         <span>{item.label}{item.detail ? ` (${item.detail})` : ""}</span>
                         <span className="tabular-nums text-muted-foreground">
-                          {formatINR(item.value)}
+                          {formatMoney(item.value, market)}
                         </span>
                       </div>
                     ))}

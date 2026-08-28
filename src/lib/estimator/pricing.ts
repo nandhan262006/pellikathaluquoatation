@@ -38,7 +38,7 @@ export function calculateEstimate(
       items.push({
         id: `coverage-${subEventId}-${coverageId}`,
         group: "Coverage",
-        label: labelForCoverage(coverageId),
+        label: labelForCoverage(coverageId, template),
         detail: name,
         value: price.value,
       });
@@ -54,7 +54,7 @@ export function calculateEstimate(
       items.push({
         id: `addon-${subEventId}-${addOnId}`,
         group: "Add-on Services",
-        label: labelForAddOn(addOnId),
+        label: labelForAddOn(addOnId, template),
         detail: name,
         value: price.value,
       });
@@ -79,7 +79,7 @@ export function calculateEstimate(
   if (albumState.required && albumState.sizeId) {
     const size = template.album.sizes.find((s) => s.id === albumState.sizeId);
     if (size) {
-      const perAlbum = albumState.pages * size.multiplier * 600;
+      const perAlbum = albumState.pages * size.multiplier * template.album.pageRate;
       const albumTotal = perAlbum * albumState.count;
       items.push({
         id: "album",
@@ -108,10 +108,10 @@ export function indexSubEvents(subs: SubEventDef[]): Map<ID, SubEventDef> {
   return map;
 }
 
-function labelForCoverage(id: ID): string {
-  return getCoverageOption(id)?.label ?? id;
+function labelForCoverage(id: ID, template: EventTemplate): string {
+  return template.optionCatalog?.[id]?.label ?? getCoverageOption(id)?.label ?? id;
 }
 
-function labelForAddOn(id: ID): string {
-  return getAddOnOption(id)?.label ?? id;
+function labelForAddOn(id: ID, template: EventTemplate): string {
+  return template.optionCatalog?.[id]?.label ?? getAddOnOption(id)?.label ?? id;
 }

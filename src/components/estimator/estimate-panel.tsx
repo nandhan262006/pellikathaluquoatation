@@ -2,11 +2,11 @@
 
 import { ReceiptIndianRupee, Sparkles } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
-import { formatINR } from "@/lib/estimator/format";
+import { formatMoney } from "@/lib/estimator/format";
 import { useEstimator } from "@/lib/estimator/state-provider";
 
 export function EstimatePanel({ compact = false }: { compact?: boolean }) {
-  const { estimate, recommendations, deliverables, dispatch } = useEstimator();
+  const { estimate, recommendations, deliverables, dispatch, state } = useEstimator();
 
   return (
     <div className="flex flex-col gap-4">
@@ -46,7 +46,7 @@ export function EstimatePanel({ compact = false }: { compact?: boolean }) {
               Estimated total (approx.)
             </span>
             <span className="font-heading text-xl font-semibold tabular-nums sm:text-2xl">
-              {formatINR(estimate.total)}
+              {formatMoney(estimate.total, state.market)}
             </span>
           </div>
         )}

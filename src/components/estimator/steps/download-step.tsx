@@ -5,7 +5,7 @@ import { Download, Loader2, RotateCcw, Check } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { formatINR } from "@/lib/estimator/format";
+import { formatMoney } from "@/lib/estimator/format";
 import { downloadEstimatePdf } from "@/lib/estimator/pdf-client";
 import { useEstimator } from "@/lib/estimator/state-provider";
 
@@ -67,7 +67,7 @@ export function DownloadStep() {
               Estimated total
             </span>
             <div className="mt-1 font-heading text-2xl font-semibold tabular-nums sm:text-3xl">
-              {formatINR(estimate.total)}
+              {formatMoney(estimate.total, state.market)}
             </div>
             {estimate.subEventCount > 0 && (
               <span className="mt-2 inline-block text-sm text-muted-foreground">
@@ -102,7 +102,7 @@ export function DownloadStep() {
                                 >
                                   <span className="font-medium">{item.label}</span>
                                   <span className="shrink-0 tabular-nums text-muted-foreground">
-                                    {formatINR(item.value)}
+                                    {formatMoney(item.value, state.market)}
                                   </span>
                                 </div>
                               ))}

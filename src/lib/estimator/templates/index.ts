@@ -1,7 +1,8 @@
-import type { EventTemplate, ID, PriceRange } from "../types";
+import type { EventTemplate, ID, OptionDefinition, PriceRange } from "../types";
 import { db } from "@/lib/db";
-import { eventTemplate, subEvent } from "@/lib/db/schema";
+import { eventTemplate, subEvent, optionCatalog } from "@/lib/db/schema";
 import { eq, asc } from "drizzle-orm";
+import { buildOptionCatalog } from "../catalog";
 import {
   deliverableRulesFor,
   weddingDeliverableRules,
@@ -19,6 +20,16 @@ import {
   anniversaryTemplate,
   corporateTemplate,
 } from "./other-events";
+import {
+  usWeddingTemplate,
+  usEngagementTemplate,
+  usBirthdayTemplate,
+  usAnniversaryTemplate,
+  usCorporateTemplate,
+  usBabyShowerTemplate,
+  usGraduationTemplate,
+  US_ALBUM_DEFAULTS,
+} from "./us-events";
 
 const HARDCODED_TEMPLATES: EventTemplate[] = [
   weddingTemplate,
@@ -28,9 +39,36 @@ const HARDCODED_TEMPLATES: EventTemplate[] = [
   housewarmingTemplate,
   anniversaryTemplate,
   corporateTemplate,
+  usWeddingTemplate,
+  usEngagementTemplate,
+  usBirthdayTemplate,
+  usAnniversaryTemplate,
+  usCorporateTemplate,
+  usBabyShowerTemplate,
+  usGraduationTemplate,
 ];
 
-async function loadDbTemplates(): Promise<EventTemplate[]> {
+async function loadOptionCatalog(): Promise<Record<ID, OptionDefinition>> {
+  try {
+    if (!db) return buildOptionCatalog();
+    const rows = await db
+      .select()
+      .from(optionCatalog)
+      .orderBy(asc(optionCatalog.kind), asc(optionCatalog.sortOrder));
+    if (!rows.length) return buildOptionCatalog();
+    const map: Record<ID, OptionDefinition> = {};
+    for (const r of rows) {
+      map[r.optionId] = { id: r.optionId, label: r.label, icon: r.icon, description: r.description };
+    }
+    return map;
+  } catch {
+    return buildOptionCatalog();
+  }
+}
+
+async function loadDbTemplates(
+  catalog: Record<ID, OptionDefinition>,
+): Promise<EventTemplate[]> {
   try {
     if (!db) return [];
     const dbTemplates = await db.select().from(eventTemplate).where(eq(eventTemplate.isActive, 1));
@@ -106,14 +144,16 @@ async function loadDbTemplates(): Promise<EventTemplate[]> {
         tagline: t.tagline || undefined,
         description: t.description || undefined,
         icon: t.icon,
+        market: t.market === "US" ? "US" : "IN",
         coverageOptions,
         addOnOptions,
+        optionCatalog: catalog,
         defaultCoveragePrices: mergedCoverage,
         defaultAddOnPrices: mergedAddOns,
         defaultReelPrice: { value: t.defaultReelPrice },
         defaultMaxReels: t.defaultMaxReels,
         subEvents: subEventDefs,
-        album: ALBUM_DEFAULTS,
+        album: t.market === "US" ? US_ALBUM_DEFAULTS : ALBUM_DEFAULTS,
         deliverableRules: templateDeliverableRules,
         recommendationRules: commonRecommendations(),
       };
@@ -152,8 +192,11 @@ function applyZeroPriceFilter(t: EventTemplate): EventTemplate {
 }
 
 export async function loadTemplates(): Promise<EventTemplate[]> {
-  const dbTemplates = await loadDbTemplates();
-  const templates = dbTemplates.length > 0 ? dbTemplates : HARDCODED_TEMPLATES;
+  const catalog = await loadOptionCatalog();
+  const dbTemplates = await loadDbTemplates(catalog);
+  const templates = dbTemplates.length > 0
+    ? dbTemplates
+    : HARDCODED_TEMPLATES.map((t) => ({ ...t, optionCatalog: catalog }));
   return templates.map(applyZeroPriceFilter);
 }
 

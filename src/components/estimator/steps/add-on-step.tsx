@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import { ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getAddOnOption } from "@/lib/estimator/catalog";
-import { formatINR } from "@/lib/estimator/format";
+import { formatMoney } from "@/lib/estimator/format";
 import { indexSubEvents } from "@/lib/estimator/pricing";
 import { useEstimator } from "@/lib/estimator/state-provider";
 import type { EventTemplate, ID, PriceRange, SubEventDef } from "@/lib/estimator/types";
@@ -103,7 +103,7 @@ export function AddOnStep() {
                 <div className="flex flex-col gap-3 border-t p-3">
                   <div className="grid gap-2 sm:grid-cols-2">
                     {template.addOnOptions.map((id) => {
-                      const opt = getAddOnOption(id);
+                      const opt = template.optionCatalog?.[id] ?? getAddOnOption(id);
                       if (!opt) return null;
                       const price = addOnPrice(template, subId, id, subMap);
                       return (
@@ -114,7 +114,7 @@ export function AddOnStep() {
                           description={opt.description}
                           selected={cfg.addOns.includes(id)}
                           priceLabel={
-                            price ? formatINR(price.value) : undefined
+                            price ? formatMoney(price.value, state.market) : undefined
                           }
                           onClick={() =>
                             dispatch({

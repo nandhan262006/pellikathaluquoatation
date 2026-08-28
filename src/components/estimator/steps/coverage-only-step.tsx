@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import { ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getCoverageOption } from "@/lib/estimator/catalog";
-import { formatINR } from "@/lib/estimator/format";
+import { formatMoney } from "@/lib/estimator/format";
 import { maxReelsFor } from "@/lib/estimator/state";
 import { indexSubEvents } from "@/lib/estimator/pricing";
 import { useEstimator } from "@/lib/estimator/state-provider";
@@ -98,7 +98,7 @@ export function CoverageOnlyStep() {
                     </span>
                     <div className="grid gap-2 sm:grid-cols-2">
                       {template.coverageOptions.map((id) => {
-                        const opt = getCoverageOption(id);
+                        const opt = template.optionCatalog?.[id] ?? getCoverageOption(id);
                         if (!opt) return null;
                         const price = coveragePrice(template, subId, id, subMap);
                         return (
@@ -109,7 +109,7 @@ export function CoverageOnlyStep() {
                             description={opt.description}
                             selected={cfg.coverage.includes(id)}
                             priceLabel={
-                              price ? formatINR(price.value) : undefined
+                              price ? formatMoney(price.value, state.market) : undefined
                             }
                             onClick={() =>
                               dispatch({
@@ -130,7 +130,7 @@ export function CoverageOnlyStep() {
                         Instagram reels
                       </span>
                       <span className="text-xs text-muted-foreground">
-                        {formatINR(reelPrice(template, subId, subMap).value)} / reel
+                        {formatMoney(reelPrice(template, subId, subMap).value, state.market)} / reel
                       </span>
                     </div>
                     <div className="flex gap-2 overflow-x-auto pb-1">

@@ -5,7 +5,10 @@ import * as schema from "../src/lib/db/schema";
 import { COVERAGE_OPTIONS, ADD_ON_OPTIONS } from "../src/lib/estimator/catalog";
 
 const url = process.env.DATABASE_URL || "file:./dev.db";
-const client = createClient({ url });
+const authToken = process.env.TURSO_AUTH_TOKEN;
+const client = url.startsWith("libsql://")
+  ? createClient({ url, authToken })
+  : createClient({ url });
 const db = drizzle(client, { schema });
 
 const COVERAGE_IDS = [

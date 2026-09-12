@@ -29,7 +29,7 @@ export function EstimateStep() {
       groups.get(item.group)!.push(item);
     }
     return { subEventOrder: order, subEventItems: items };
-  }, [estimate.items]);
+  }, [estimate]);
 
   return (
     <section className="flex flex-col gap-6">

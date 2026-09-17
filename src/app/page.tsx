@@ -1,7 +1,5 @@
 import Link from "next/link";
-import Image from "next/image";
 import { Sparkles } from "lucide-react";
-import { ServiceGallery } from "@/components/service-gallery";
 
 export default function HomePage() {
   return (
@@ -9,7 +7,7 @@ export default function HomePage() {
       <header className="border-b">
         <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-center">
           <Link href="/" className="flex items-center">
-            <Image src="/NAVIBAR.png" alt="Photriya Studios" width={75} height={75} priority />
+            <span className="text-lg font-semibold tracking-tight">Stories by Harsha</span>
           </Link>
         </div>
       </header>
@@ -29,25 +27,6 @@ export default function HomePage() {
           <Sparkles className="mr-2 h-5 w-5" />
           Estimate an Event
         </Link>
-      </section>
-
-      <section className="max-w-7xl mx-auto px-4 py-2">
-        <div className="flex items-center gap-2 mb-2">
-          <Sparkles className="h-5 w-5" />
-          <h2 className="text-xl font-semibold">Our Work</h2>
-        </div>
-        <ServiceGallery
-          images={[
-            { src: "/gallery/gallery1.webp", alt: "Photography work 1" },
-            { src: "/gallery/gallery2.webp", alt: "Photography work 2" },
-            { src: "/gallery/gallery3.webp", alt: "Photography work 3" },
-            { src: "/gallery/gallery4.webp", alt: "Photography work 4" },
-            { src: "/gallery/gallery5.webp", alt: "Photography work 5" },
-            { src: "/gallery/gallery6.webp", alt: "Photography work 6" },
-            { src: "/gallery/gallery7.webp", alt: "Photography work 7" },
-            { src: "/gallery/gallery8.webp", alt: "Photography work 8" },
-          ]}
-        />
       </section>
     </div>
   );

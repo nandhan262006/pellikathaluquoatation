@@ -2,7 +2,6 @@
 
 import { useRef, useEffect } from "react";
 import Link from "next/link";
-import Image from "next/image";
 import { ArrowLeft, ArrowRight, SkipForward } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { STEPS } from "@/lib/estimator/state";
@@ -35,27 +34,27 @@ const SKIPPABLE_STEPS = new Set([3, 4, 5]);
 function EstimatorShell() {
   const { state, dispatch, estimate, deliverables, template } = useEstimator();
   const lastStep = STEPS.length - 1;
-  const savedRef = useRef(false);
+  const savedDataRef = useRef<string | null>(null);
 
   useEffect(() => {
-    if (state.step >= 7 && state.clientName && state.clientPhone && state.eventTypeId) {
-      if (savedRef.current) return;
-      savedRef.current = true;
-      const estimateJSON = JSON.stringify({ state, estimate, deliverables });
-      saveEstimateLead({
-        clientName: state.clientName,
-        clientPhone: state.clientPhone,
-        eventType: state.eventTypeId,
-        eventName: template?.name ?? "",
-        market: state.market,
-        estimatedDate: state.estimatedDate,
-        estimateData: estimateJSON,
-      }).catch(() => {
-        console.warn("Failed to auto-save estimate lead");
-      });
+    if (state.step < 7 || !state.clientName || !state.clientPhone || !state.eventTypeId) {
+      return;
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [state.step]);
+    const estimateJSON = JSON.stringify({ state, estimate, deliverables });
+    if (savedDataRef.current === estimateJSON) return;
+    savedDataRef.current = estimateJSON;
+    saveEstimateLead({
+      clientName: state.clientName,
+      clientPhone: state.clientPhone,
+      eventType: state.eventTypeId,
+      eventName: template?.name ?? "",
+      market: state.market,
+      estimateData: estimateJSON,
+    }).catch(() => {
+      console.warn("Failed to auto-save estimate lead");
+      savedDataRef.current = null;
+    });
+  }, [state, state.step, estimate, deliverables, template]);
 
   const canProceed = (() => {
     switch (state.step) {
@@ -91,7 +90,7 @@ function EstimatorShell() {
             href="/"
             className="flex items-center text-sm font-medium text-foreground hover:text-muted-foreground"
           >
-            <Image src="/NAVIBAR.png" alt="Photriya Studios" width={75} height={75} priority />
+            <span className="text-base font-semibold tracking-tight">Stories by Harsha</span>
           </Link>
           <div className="flex flex-col leading-none text-right">
             <span className="text-xs text-muted-foreground">

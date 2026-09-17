@@ -302,9 +302,10 @@ export function sanitizeState(
   };
 
   return {
-    clientName: typeof s.clientName === "string" ? s.clientName : "",
+    clientName:
+      typeof s.clientName === "string" ? s.clientName.trim().slice(0, 80) : "",
     clientPhone: typeof s.clientPhone === "string" ? s.clientPhone.replace(/\D/g, "").slice(0, 10) : "",
-    estimatedDate: typeof s.estimatedDate === "string" ? s.estimatedDate : "",
+    estimatedDate: isValidDateString(s.estimatedDate) ? s.estimatedDate : "",
     market: s.market === "US" ? "US" : "IN",
     eventTypeId: template.id,
     selectedSubEvents,
@@ -312,6 +313,14 @@ export function sanitizeState(
     album,
     step: clampInt(s.step, 0, STEPS.length - 1),
   };
+}
+
+const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
+
+function isValidDateString(value: unknown): value is string {
+  if (typeof value !== "string" || !DATE_PATTERN.test(value)) return false;
+  const d = new Date(`${value}T00:00:00Z`);
+  return !Number.isNaN(d.getTime()) && d.toISOString().slice(0, 10) === value;
 }
 
 function clampInt(value: unknown, min: number, max: number): number {

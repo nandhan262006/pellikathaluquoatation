@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import {
@@ -49,7 +48,7 @@ export function AdminSidebar() {
       >
         <div className="flex items-center justify-between border-b p-4">
           <Link href="/admin" className="flex items-center" onClick={() => setMobileOpen(false)}>
-            <Image src="/NAVIBAR.png" alt="Photriya Studios" width={75} height={75} priority />
+            <span className="text-base font-semibold tracking-tight">Stories by Harsha</span>
           </Link>
           <button
             type="button"

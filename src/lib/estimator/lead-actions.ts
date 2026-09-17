@@ -6,24 +6,44 @@ import { estimateLead } from "@/lib/db/schema";
 import { eq, desc } from "drizzle-orm";
 import type { Market } from "./types";
 
+const MAX_ESTIMATE_DATA_LENGTH = 64_000;
+
+function cleanString(value: unknown, max: number): string {
+  return typeof value === "string" ? value.trim().slice(0, max) : "";
+}
+
 export async function saveEstimateLead(data: {
   clientName: string;
   clientPhone: string;
   eventType: string;
   eventName: string;
   market: Market;
-  estimatedDate: string;
   estimateData: string;
 }) {
   const db = getDb();
+
+  const clientName = cleanString(data.clientName, 80);
+  const clientPhone = cleanString(data.clientPhone, 15).replace(/\D/g, "").slice(0, 10);
+  const eventType = cleanString(data.eventType, 40);
+  const eventName = cleanString(data.eventName, 80);
+  const market: Market = data.market === "US" ? "US" : "IN";
+  const estimateData =
+    typeof data.estimateData === "string" && data.estimateData.length <= MAX_ESTIMATE_DATA_LENGTH
+      ? data.estimateData
+      : "";
+
+  if (!clientName || clientPhone.length !== 10 || !eventType || !estimateData) {
+    return { success: false };
+  }
+
   try {
     await db.insert(estimateLead).values({
-      clientName: data.clientName,
-      clientPhone: data.clientPhone,
-      eventType: data.eventType,
-      eventName: data.eventName,
-      market: data.market,
-      estimateData: data.estimateData,
+      clientName,
+      clientPhone,
+      eventType,
+      eventName,
+      market,
+      estimateData,
     });
     return { success: true };
   } catch (e) {

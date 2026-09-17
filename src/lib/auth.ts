@@ -1,5 +1,13 @@
+import { timingSafeEqual } from "node:crypto";
 import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
+
+function passwordsMatch(candidate: unknown, expected: string): boolean {
+  if (typeof candidate !== "string") return false;
+  const a = Buffer.from(candidate);
+  const b = Buffer.from(expected);
+  return a.length === b.length && timingSafeEqual(a, b);
+}
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
   providers: [
@@ -12,7 +20,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         if (!credentials?.password) return null;
         const adminPassword = process.env.ADMIN_PASSWORD;
         if (!adminPassword) return null;
-        if (credentials.password !== adminPassword) return null;
+        if (!passwordsMatch(credentials.password, adminPassword)) return null;
         return { id: "1", name: "Admin User", role: "admin" };
       },
     }),

@@ -52,7 +52,7 @@ export async function POST(request: NextRequest) {
       status: 200,
       headers: {
         "Content-Type": "application/pdf",
-        "Content-Disposition": 'attachment; filename="photriya-estimate.pdf"',
+        "Content-Disposition": 'attachment; filename="stories-by-harsha-estimate.pdf"',
       },
     });
   } catch (error) {

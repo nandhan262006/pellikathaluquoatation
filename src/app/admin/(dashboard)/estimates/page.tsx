@@ -10,8 +10,9 @@ export const dynamic = "force-dynamic";
 function extractEstimatedDate(estimateData: string): string | null {
   try {
     const parsed = JSON.parse(estimateData);
-    if (parsed?.state?.estimatedDate) {
-      return new Date(parsed.state.estimatedDate + "T00:00:00").toLocaleDateString("en-IN", {
+    const raw = parsed?.state?.estimatedDate;
+    if (typeof raw === "string" && /^\d{4}-\d{2}-\d{2}$/.test(raw)) {
+      return new Date(`${raw}T00:00:00`).toLocaleDateString("en-IN", {
         day: "numeric", month: "short", year: "numeric",
       });
     }

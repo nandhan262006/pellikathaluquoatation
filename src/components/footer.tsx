@@ -1,12 +1,9 @@
 import Link from "next/link";
-import Image from "next/image";
 
 const socialLinks = [
-  { name: "Instagram", url: "https://www.instagram.com/photriyavenky/" },
-  { name: "X", url: "https://x.com/PhotriyaVenky" },
-  { name: "Facebook", url: "https://www.facebook.com/PhotriyaPhotography/" },
-  { name: "Pinterest", url: "https://in.pinterest.com/photriya/" },
-  { name: "YouTube", url: "https://www.youtube.com/@PhotriyaVenky" },
+  { name: "Website", url: "https://storiesbyharsha.in/" },
+  { name: "Instagram", url: "https://www.instagram.com/storiesbyharsha/" },
+  { name: "YouTube", url: "https://www.youtube.com/@storiesbyharsha" },
 ];
 
 export function Footer() {
@@ -14,7 +11,7 @@ export function Footer() {
     <footer className="border-t bg-muted/30">
       <div className="mx-auto flex max-w-7xl flex-col items-center gap-4 px-4 py-8 sm:flex-row sm:justify-between">
         <Link href="/" className="flex items-center">
-          <Image src="/NAVIBAR.png" alt="Photriya Studios" width={40} height={40} />
+          <span className="text-sm font-semibold tracking-tight">Stories by Harsha</span>
         </Link>
 
         <div className="flex flex-wrap items-center justify-center gap-2">
@@ -32,7 +29,7 @@ export function Footer() {
         </div>
 
         <p className="text-xs text-muted-foreground">
-          &copy; {new Date().getFullYear()} Photriya Studios
+          &copy; {new Date().getFullYear()} Stories by Harsha
         </p>
       </div>
     </footer>

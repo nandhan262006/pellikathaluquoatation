@@ -18,16 +18,21 @@ export default function AdminLoginPage() {
     setLoading(true);
 
     const form = new FormData(e.currentTarget);
-    const result = await signIn("credentials", {
-      password: form.get("password"),
-      redirect: false,
-    });
+    try {
+      const result = await signIn("credentials", {
+        password: form.get("password"),
+        redirect: false,
+      });
 
-    if (result?.error) {
-      toast.error("Invalid password");
+      if (result?.error) {
+        toast.error("Invalid password");
+        setLoading(false);
+      } else {
+        router.push("/admin");
+      }
+    } catch {
+      toast.error("Sign-in failed. Please try again.");
       setLoading(false);
-    } else {
-      router.push("/admin");
     }
   }
 
@@ -37,7 +42,7 @@ export default function AdminLoginPage() {
         <div className="border rounded-lg bg-background p-8">
           <div className="flex items-center gap-2 justify-center mb-6">
             <Lock className="h-6 w-6" />
-            <span className="text-xl font-semibold">Photriya Studios</span>
+            <span className="text-xl font-semibold">Stories by Harsha</span>
           </div>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>

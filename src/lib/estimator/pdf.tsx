@@ -7,37 +7,18 @@
  */
 import {
   Document,
-  Image,
   Page,
   StyleSheet,
   Text,
   View,
   renderToBuffer,
 } from "@react-pdf/renderer";
-import fs from "fs";
-import path from "path";
 import { formatMoneyPlain, COUNTRY_CODES } from "./format";
 import type {
   EstimateBreakdown,
   EstimatorState,
   EventTemplate,
 } from "./types";
-
-// Load watermark image as base64
-let watermarkBase64Cache: string | null | undefined;
-
-function getWatermarkBase64(): string | null {
-  if (watermarkBase64Cache !== undefined) return watermarkBase64Cache;
-  try {
-    const imagePath = path.join(process.cwd(), "public", "NAVIBAR.png");
-    const imageBuffer = fs.readFileSync(imagePath);
-    watermarkBase64Cache = `data:image/png;base64,${imageBuffer.toString("base64")}`;
-    return watermarkBase64Cache;
-  } catch {
-    watermarkBase64Cache = null;
-    return null;
-  }
-}
 
 const styles = StyleSheet.create({
   page: {
@@ -46,6 +27,8 @@ const styles = StyleSheet.create({
     fontFamily: "Helvetica",
     color: "#1a1a1a",
     backgroundColor: "#ffffff",
+    display: "flex",
+    flexDirection: "column",
   },
   brand: {
     fontSize: 20,
@@ -134,12 +117,10 @@ const styles = StyleSheet.create({
     color: "#9ca3af",
     textAlign: "center",
   },
-  watermark: {
-    position: "absolute",
-    top: "40%",
-    left: "25%",
-    width: "50%",
-    opacity: 0.08,
+  // Expands to push the estimated total block to the bottom of the last
+  // page so it never sits in the middle of the page.
+  bottomSpacer: {
+    flex: 1,
   },
 });
 
@@ -148,14 +129,6 @@ interface PdfProps {
   state: EstimatorState;
   estimate: EstimateBreakdown;
   deliverableTexts: string[];
-}
-
-function Watermark() {
-  const watermarkBase64 = getWatermarkBase64();
-
-  if (!watermarkBase64) return null;
-  // eslint-disable-next-line jsx-a11y/alt-text
-  return <Image src={watermarkBase64} style={styles.watermark} />;
 }
 
 // A4 dimensions in points
@@ -384,10 +357,9 @@ function EstimatePdfDocument({ template, state, estimate, deliverableTexts }: Pd
     <Document>
       {/* Page 1: Header + Event Details + Price Breakdown (part 1) */}
       <Page size="A4" style={styles.page}>
-        <Watermark />
         <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
           <View>
-            <Text style={styles.brand}>Photriya Studios</Text>
+            <Text style={styles.brand}>Stories by Harsha</Text>
             <Text style={styles.subtitle}>Event Cost Estimate</Text>
           </View>
           <Text style={styles.date}>{today}</Text>
@@ -437,7 +409,8 @@ function EstimatePdfDocument({ template, state, estimate, deliverableTexts }: Pd
         {/* If everything fits, show total + deliverables on page 1 */}
         {!needsSecondPage && (
           <>
-            <View style={styles.totalBox}>
+            <View style={styles.bottomSpacer} />
+            <View style={styles.totalBox} wrap={false}>
               <Text style={styles.totalLabel}>ESTIMATED TOTAL (APPROXIMATE)</Text>
               <Text style={styles.totalValue}>
                 {estimate.isEmpty
@@ -453,12 +426,12 @@ function EstimatePdfDocument({ template, state, estimate, deliverableTexts }: Pd
             <Text style={styles.disclaimer}>
               Disclaimer: This is only an approximate estimate. The final quotation
               may vary depending on event duration, location, travel, venue
-              restrictions and custom requirements. Please contact Photriya Studios
+              restrictions and custom requirements. Please contact Stories by Harsha
               for a detailed, finalised quote.
             </Text>
 
             <Text style={styles.footer}>
-              Thank you for considering Photriya Studios.
+              Thank you for considering Stories by Harsha.
             </Text>
           </>
         )}
@@ -467,14 +440,14 @@ function EstimatePdfDocument({ template, state, estimate, deliverableTexts }: Pd
       {/* Page 2: Remaining items + Total + Deliverables */}
       {needsSecondPage && (
         <Page size="A4" style={styles.page}>
-          <Watermark />
           <Text style={styles.sectionTitle}>Price breakdown (continued)</Text>
           <PdfPriceSection chunks={page2Chunks} market={state.market} />
 
           {/* If no page 3 needed, show total + deliverables on page 2 */}
           {!page2NeedsThirdPage && (
             <>
-              <View style={styles.totalBox}>
+              <View style={styles.bottomSpacer} />
+              <View style={styles.totalBox} wrap={false}>
                 <Text style={styles.totalLabel}>ESTIMATED TOTAL (APPROXIMATE)</Text>
                 <Text style={styles.totalValue}>
                   {estimate.isEmpty
@@ -490,12 +463,12 @@ function EstimatePdfDocument({ template, state, estimate, deliverableTexts }: Pd
               <Text style={styles.disclaimer}>
                 Disclaimer: This is only an approximate estimate. The final quotation
                 may vary depending on event duration, location, travel, venue
-                restrictions and custom requirements. Please contact Photriya Studios
+                restrictions and custom requirements. Please contact Stories by Harsha
                 for a detailed, finalised quote.
               </Text>
 
               <Text style={styles.footer}>
-                Thank you for considering Photriya Studios.
+                Thank you for considering Stories by Harsha.
               </Text>
             </>
           )}
@@ -505,11 +478,11 @@ function EstimatePdfDocument({ template, state, estimate, deliverableTexts }: Pd
       {/* Page 3: Final remaining items + Total + Deliverables */}
       {page2NeedsThirdPage && (
         <Page size="A4" style={styles.page}>
-          <Watermark />
           <Text style={styles.sectionTitle}>Price breakdown (continued)</Text>
           <PdfPriceSection chunks={page3Chunks} market={state.market} />
 
-          <View style={styles.totalBox}>
+          <View style={styles.bottomSpacer} />
+          <View style={styles.totalBox} wrap={false}>
             <Text style={styles.totalLabel}>ESTIMATED TOTAL (APPROXIMATE)</Text>
             <Text style={styles.totalValue}>
               {estimate.isEmpty
@@ -525,12 +498,12 @@ function EstimatePdfDocument({ template, state, estimate, deliverableTexts }: Pd
           <Text style={styles.disclaimer}>
             Disclaimer: This is only an approximate estimate. The final quotation
             may vary depending on event duration, location, travel, venue
-            restrictions and custom requirements. Please contact Photriya Studios
+            restrictions and custom requirements. Please contact Stories by Harsha
             for a detailed, finalised quote.
           </Text>
 
           <Text style={styles.footer}>
-            Thank you for considering Photriya Studios.
+            Thank you for considering Stories by Harsha.
           </Text>
         </Page>
       )}

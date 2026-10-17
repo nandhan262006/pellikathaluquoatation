@@ -98,7 +98,7 @@ async function main() {
 
   await db.insert(schema.photographer).values({
     name: "Venky",
-    email: "venky@photriya.com",
+    email: "venky@pellikathalu.com",
     phone: "+91 98765 43210",
     bio: "Lead photographer with 10+ years of experience",
   });

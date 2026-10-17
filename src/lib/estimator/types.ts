@@ -1,5 +1,5 @@
 /**
- * Core domain types for the Stories by Harsha Event Cost Estimator.
+ * Core domain types for the Pellikathalu Event Cost Estimator.
  *
  * Everything here is plain serializable data (no functions) so that templates
  * can later be hydrated from a database or Sanity CMS without changing the

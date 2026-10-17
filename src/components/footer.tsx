@@ -1,9 +1,9 @@
 import Link from "next/link";
+import Image from "next/image";
 
 const socialLinks = [
-  { name: "Website", url: "https://storiesbyharsha.in/" },
-  { name: "Instagram", url: "https://www.instagram.com/storiesbyharsha/" },
-  { name: "YouTube", url: "https://www.youtube.com/@storiesbyharsha" },
+  { name: "Website", url: "https://www.pellikathalu.co/" },
+  { name: "Instagram", url: "https://www.instagram.com/portraits.by_pellikathalu/" },
 ];
 
 export function Footer() {
@@ -11,7 +11,13 @@ export function Footer() {
     <footer className="border-t bg-muted/30">
       <div className="mx-auto flex max-w-7xl flex-col items-center gap-4 px-4 py-8 sm:flex-row sm:justify-between">
         <Link href="/" className="flex items-center">
-          <span className="text-sm font-semibold tracking-tight">Stories by Harsha</span>
+          <Image
+            src="/logo.png"
+            alt="Pellikathalu"
+            width={188}
+            height={30}
+            className="h-7 w-auto"
+          />
         </Link>
 
         <div className="flex flex-wrap items-center justify-center gap-2">
@@ -29,7 +35,7 @@ export function Footer() {
         </div>
 
         <p className="text-xs text-muted-foreground">
-          &copy; {new Date().getFullYear()} Stories by Harsha
+          &copy; {new Date().getFullYear()} Pellikathalu
         </p>
       </div>
     </footer>

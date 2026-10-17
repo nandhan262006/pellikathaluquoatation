@@ -359,7 +359,7 @@ function EstimatePdfDocument({ template, state, estimate, deliverableTexts }: Pd
       <Page size="A4" style={styles.page}>
         <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
           <View>
-            <Text style={styles.brand}>Stories by Harsha</Text>
+            <Text style={styles.brand}>Pellikathalu</Text>
             <Text style={styles.subtitle}>Event Cost Estimate</Text>
           </View>
           <Text style={styles.date}>{today}</Text>
@@ -426,12 +426,12 @@ function EstimatePdfDocument({ template, state, estimate, deliverableTexts }: Pd
             <Text style={styles.disclaimer}>
               Disclaimer: This is only an approximate estimate. The final quotation
               may vary depending on event duration, location, travel, venue
-              restrictions and custom requirements. Please contact Stories by Harsha
+              restrictions and custom requirements. Please contact Pellikathalu
               for a detailed, finalised quote.
             </Text>
 
             <Text style={styles.footer}>
-              Thank you for considering Stories by Harsha.
+              Thank you for considering Pellikathalu.
             </Text>
           </>
         )}
@@ -463,12 +463,12 @@ function EstimatePdfDocument({ template, state, estimate, deliverableTexts }: Pd
               <Text style={styles.disclaimer}>
                 Disclaimer: This is only an approximate estimate. The final quotation
                 may vary depending on event duration, location, travel, venue
-                restrictions and custom requirements. Please contact Stories by Harsha
+                restrictions and custom requirements. Please contact Pellikathalu
                 for a detailed, finalised quote.
               </Text>
 
               <Text style={styles.footer}>
-                Thank you for considering Stories by Harsha.
+                Thank you for considering Pellikathalu.
               </Text>
             </>
           )}
@@ -498,12 +498,12 @@ function EstimatePdfDocument({ template, state, estimate, deliverableTexts }: Pd
           <Text style={styles.disclaimer}>
             Disclaimer: This is only an approximate estimate. The final quotation
             may vary depending on event duration, location, travel, venue
-            restrictions and custom requirements. Please contact Stories by Harsha
+            restrictions and custom requirements. Please contact Pellikathalu
             for a detailed, finalised quote.
           </Text>
 
           <Text style={styles.footer}>
-            Thank you for considering Stories by Harsha.
+            Thank you for considering Pellikathalu.
           </Text>
         </Page>
       )}

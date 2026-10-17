@@ -44,7 +44,7 @@ yarn-error.log*
 next-env.d.ts
 
 # Generated PDFs
-public/photriya-estimate*.pdf
+public/pellikathalu-estimate*.pdf
 
 # WebP converted files
 public/gallery/*.webp

@@ -2,6 +2,7 @@
 
 import { useRef, useEffect } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { ArrowLeft, ArrowRight, SkipForward } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { STEPS } from "@/lib/estimator/state";
@@ -90,7 +91,13 @@ function EstimatorShell() {
             href="/"
             className="flex items-center text-sm font-medium text-foreground hover:text-muted-foreground"
           >
-            <span className="text-base font-semibold tracking-tight">Stories by Harsha</span>
+            <Image
+              src="/logo.png"
+              alt="Pellikathalu"
+              width={226}
+              height={36}
+              className="h-9 w-auto"
+            />
           </Link>
           <div className="flex flex-col leading-none text-right">
             <span className="text-xs text-muted-foreground">

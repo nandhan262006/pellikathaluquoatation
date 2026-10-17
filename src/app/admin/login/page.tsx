@@ -1,12 +1,13 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Lock, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
 export default function AdminLoginPage() {
@@ -40,9 +41,14 @@ export default function AdminLoginPage() {
     <div className="flex-1 flex items-center justify-center bg-muted/30">
       <div className="w-full max-w-sm mx-auto px-4">
         <div className="border rounded-lg bg-background p-8">
-          <div className="flex items-center gap-2 justify-center mb-6">
-            <Lock className="h-6 w-6" />
-            <span className="text-xl font-semibold">Stories by Harsha</span>
+          <div className="flex justify-center mb-6">
+            <Image
+              src="/logo.png"
+              alt="Pellikathalu"
+              width={378}
+              height={60}
+              className="h-14 w-auto"
+            />
           </div>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>

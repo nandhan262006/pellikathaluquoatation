@@ -5,14 +5,14 @@ import { loadTemplates } from "@/lib/estimator/templates";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "Event Cost Estimator | Stories by Harsha",
+  title: "Event Cost Estimator | Pellikathalu",
   description:
-    "Build your photography and videography package at Stories by Harsha, Hyderabad and get an instant rough estimate.",
+    "Build your photography and videography package at Pellikathalu, Hyderabad and get an instant rough estimate.",
   openGraph: {
-    title: "Event Cost Estimator | Stories by Harsha",
+    title: "Event Cost Estimator | Pellikathalu",
     description:
-      "Build your photography and videography package at Stories by Harsha, Hyderabad and get an instant rough estimate.",
-    siteName: "Stories by Harsha",
+      "Build your photography and videography package at Pellikathalu, Hyderabad and get an instant rough estimate.",
+    siteName: "Pellikathalu",
     locale: "en_IN",
     type: "website",
   },

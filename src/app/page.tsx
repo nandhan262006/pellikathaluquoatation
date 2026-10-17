@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { Sparkles } from "lucide-react";
 
 export default function HomePage() {
@@ -7,7 +8,14 @@ export default function HomePage() {
       <header className="border-b">
         <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-center">
           <Link href="/" className="flex items-center">
-            <span className="text-lg font-semibold tracking-tight">Stories by Harsha</span>
+            <Image
+              src="/logo.png"
+              alt="Pellikathalu"
+              width={226}
+              height={36}
+              preload
+              className="h-9 w-auto"
+            />
           </Link>
         </div>
       </header>

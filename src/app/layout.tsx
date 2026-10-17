@@ -15,13 +15,13 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-    title: "Stories by Harsha - Photography Booking",
-  description: "Stories by Harsha is a premier photography studio in Hyderabad, Telangana with 664+ Google reviews. Book professional photography and videography sessions online.",
-  metadataBase: new URL("https://photoriya.vercel.app"),
+  title: "Pellikathalu - Photography Booking",
+  description: "Pellikathalu is a premier photography studio in Hyderabad, Telangana. Book professional photography and videography sessions online.",
+  metadataBase: new URL("https://www.pellikathalu.co"),
   openGraph: {
-title: "Stories by Harsha - Photography Booking",
-    description: "Stories by Harsha is a premier photography studio in Hyderabad, Telangana with 664+ Google reviews. Book professional photography and videography sessions online.",
-    siteName: "Stories by Harsha",
+    title: "Pellikathalu - Photography Booking",
+    description: "Pellikathalu is a premier photography studio in Hyderabad, Telangana. Book professional photography and videography sessions online.",
+    siteName: "Pellikathalu",
     locale: "en_IN",
     type: "website",
   },

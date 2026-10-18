@@ -1,29 +1,18 @@
 "use client";
 
-import { useState } from "react";
-import { Download, Loader2, RotateCcw, Check } from "lucide-react";
-import { toast } from "sonner";
+import { RotateCcw, Check, Printer } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { formatMoney } from "@/lib/estimator/format";
-import { downloadEstimatePdf } from "@/lib/estimator/pdf-client";
+import { EstimatePrint } from "@/components/estimator/estimate-print";
 import { useEstimator } from "@/lib/estimator/state-provider";
 
 export function DownloadStep() {
   const { state, estimate, deliverableTexts, dispatch } = useEstimator();
-  const [downloading, setDownloading] = useState(false);
 
-  const handleDownload = async () => {
+  const handlePrint = () => {
     if (estimate.isEmpty) return;
-    setDownloading(true);
-    try {
-      await downloadEstimatePdf(state);
-      toast.success("Your estimate PDF is downloading.");
-    } catch {
-      toast.error("Could not generate the PDF. Please try again.");
-    } finally {
-      setDownloading(false);
-    }
+    window.print();
   };
 
   const subEventItems = new Map<string, Map<string, typeof estimate.items>>();
@@ -44,12 +33,13 @@ export function DownloadStep() {
 
   return (
     <section className="flex flex-col gap-6">
+      <EstimatePrint />
       <header className="flex flex-col gap-1">
         <h1 className="font-heading text-2xl font-semibold">
           Download your estimate
         </h1>
         <p className="text-sm text-muted-foreground">
-          Review the summary below and download a branded PDF with your
+          Review the summary below, then print it or save it as a PDF with your
           selections, deliverables, and estimated price.
         </p>
       </header>
@@ -152,17 +142,9 @@ export function DownloadStep() {
       </div>
 
       <div className="flex flex-wrap items-center gap-3">
-        <Button
-          onClick={handleDownload}
-          disabled={estimate.isEmpty || downloading}
-          size="lg"
-        >
-          {downloading ? (
-            <Loader2 className="animate-spin" />
-          ) : (
-            <Download />
-          )}
-          Download PDF
+        <Button onClick={handlePrint} disabled={estimate.isEmpty} size="lg">
+          <Printer />
+          Print / Save as PDF
         </Button>
         <Button
           variant="outline"

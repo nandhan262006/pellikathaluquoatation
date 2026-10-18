@@ -14,7 +14,7 @@ export const STEPS = [
   "Additional Services",
   "Deliverables",
   "Estimate",
-  "Download PDF",
+  "Print / Save PDF",
 ] as const;
 
 export const initialState: EstimatorState = {

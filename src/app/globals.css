@@ -239,3 +239,38 @@ html, body {
 .letterbox::after {
   bottom: 0;
 }
+/* ==========================================================================
+   ESTIMATOR PRINT FLOW (Save as PDF via browser)
+   The .estimate-print-root document is portaled to <body>; on screen it is
+   hidden, and in print only it is shown.
+   ========================================================================== */
+.estimate-print-root {
+  display: none;
+}
+
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 12mm;
+  }
+
+  html,
+  body {
+    height: auto !important;
+    overflow: visible !important;
+    background: #ffffff !important;
+  }
+
+  body > *:not(.estimate-print-root) {
+    display: none !important;
+  }
+
+  .estimate-print-root {
+    display: block !important;
+  }
+
+  .avoid-break {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+}

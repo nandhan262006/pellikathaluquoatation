@@ -13,7 +13,7 @@ export function ContactPage({ data, number }: { data: QuotationData; number: num
         <>
           {/* Top gold arch */}
           <Image
-            src="/borderlastpage.png"
+            src="/borderlastpage.webp"
             alt=""
             width={1536}
             height={1024}
@@ -30,7 +30,7 @@ export function ContactPage({ data, number }: { data: QuotationData; number: num
           />
           {/* Festive elephant walking in from the bottom-left */}
           <Image
-            src="/ELEPHANT.png"
+            src="/ELEPHANT.webp"
             alt=""
             width={1417}
             height={1123}

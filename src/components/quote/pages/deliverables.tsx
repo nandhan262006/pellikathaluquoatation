@@ -12,7 +12,7 @@ export function DeliverablesPage({ data, number }: { data: QuotationData; number
       art={
         /* Shehnai players in the bottom-right corner */
         <Image
-          src="/sanai.png"
+          src="/sanai.webp"
           alt=""
           width={1024}
           height={1536}

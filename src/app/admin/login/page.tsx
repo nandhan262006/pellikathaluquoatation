@@ -43,7 +43,7 @@ export default function AdminLoginPage() {
         <div className="border rounded-lg bg-background p-8">
           <div className="flex justify-center mb-6">
             <Image
-              src="/logo.png"
+              src="/logo.webp"
               alt="Pellikathalu"
               width={378}
               height={60}

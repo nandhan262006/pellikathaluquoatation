@@ -12,7 +12,7 @@ export function Footer() {
       <div className="mx-auto flex max-w-7xl flex-col items-center gap-4 px-4 py-8 sm:flex-row sm:justify-between">
         <Link href="/" className="flex items-center">
           <Image
-            src="/logo.png"
+            src="/logo.webp"
             alt="Pellikathalu"
             width={188}
             height={30}

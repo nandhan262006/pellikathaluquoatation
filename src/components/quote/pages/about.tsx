@@ -12,7 +12,7 @@ export function AboutPage({ data, number }: { data: QuotationData; number: numbe
         <>
           {/* Right-side gold arch */}
           <Image
-            src="/borderlastpage.png"
+            src="/borderlastpage.webp"
             alt=""
             width={1536}
             height={1024}
@@ -30,7 +30,7 @@ export function AboutPage({ data, number }: { data: QuotationData; number: numbe
 
           {/* Heritage couple illustration under the arch */}
           <Image
-            src="/couple.png"
+            src="/couple.webp"
             alt=""
             width={941}
             height={597}

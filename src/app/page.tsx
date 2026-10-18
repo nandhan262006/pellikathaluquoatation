@@ -9,7 +9,7 @@ export default function HomePage() {
         <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-center">
           <Link href="/" className="flex items-center">
             <Image
-              src="/logo.png"
+              src="/logo.webp"
               alt="Pellikathalu"
               width={226}
               height={36}

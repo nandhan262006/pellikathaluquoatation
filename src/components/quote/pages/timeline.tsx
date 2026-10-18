@@ -12,7 +12,7 @@ export function TimelinePage({ data, number }: { data: QuotationData; number: nu
       art={
         /* Wedding scene illustration along the bottom-right of the page */
         <Image
-          src="/lastpage.png"
+          src="/lastpage.webp"
           alt=""
           width={1536}
           height={1024}

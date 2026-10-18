@@ -50,7 +50,7 @@ export function AdminSidebar() {
         <div className="flex items-center justify-between border-b p-4">
           <Link href="/admin" className="flex items-center" onClick={() => setMobileOpen(false)}>
             <Image
-              src="/logo.png"
+              src="/logo.webp"
               alt="Pellikathalu"
               width={188}
               height={30}

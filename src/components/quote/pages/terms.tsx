@@ -12,7 +12,7 @@ export function TermsPage({ data, number }: { data: QuotationData; number: numbe
       art={
         /* Couple illustration in the bottom-right corner */
         <Image
-          src="/7THPAGE.png"
+          src="/7THPAGE.webp"
           alt=""
           width={1536}
           height={1024}

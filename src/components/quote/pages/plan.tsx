@@ -12,7 +12,7 @@ export function PlanPage({ data, number }: { data: QuotationData; number: number
       art={
         /* Festive drums in the bottom-right corner */
         <Image
-          src="/drums.png"
+          src="/drums.webp"
           alt=""
           width={761}
           height={800}

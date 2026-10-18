@@ -9,7 +9,7 @@ import Image from "next/image";
 function KnotWatermark() {
   return (
     <Image
-      src="/knot-watermark.png"
+      src="/knot-watermark.webp"
       alt=""
       width={700}
       height={700}
@@ -23,7 +23,7 @@ function KnotWatermark() {
 export function Kalash({ height = 26 }: { height?: number }) {
   return (
     <Image
-      src="/kalash.png"
+      src="/kalash.webp"
       alt=""
       width={594}
       height={600}

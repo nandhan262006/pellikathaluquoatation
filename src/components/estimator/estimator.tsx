@@ -92,7 +92,7 @@ function EstimatorShell() {
             className="flex items-center text-sm font-medium text-foreground hover:text-muted-foreground"
           >
             <Image
-              src="/logo.png"
+              src="/logo.webp"
               alt="Pellikathalu"
               width={226}
               height={36}

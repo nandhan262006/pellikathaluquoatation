@@ -47,6 +47,7 @@ export default function AdminLoginPage() {
               alt="Pellikathalu"
               width={378}
               height={60}
+              loading="eager"
               className="h-14 w-auto"
             />
           </div>

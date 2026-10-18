@@ -3,7 +3,7 @@ import { getAdminMarket } from "@/lib/admin/market";
 import { COUNTRY_CODES } from "@/lib/estimator/format";
 import { MarkCompleteButton } from "@/components/admin/mark-complete-button";
 import { DeleteEstimateButton } from "@/components/admin/delete-estimate-button";
-import { EstimateDetail } from "@/components/admin/estimate-detail";
+import { GetInvoiceButton } from "@/components/admin/get-invoice-button";
 
 export const dynamic = "force-dynamic";
 
@@ -68,7 +68,18 @@ export default async function AdminEstimatesPage() {
                     {eventDate || "\u2014"}
                   </td>
                   <td className="p-3 text-sm">
-                    <EstimateDetail estimateData={lead.estimateData} />
+                    <GetInvoiceButton
+                      lead={{
+                        id: lead.id,
+                        clientName: lead.clientName,
+                        clientPhone: lead.clientPhone,
+                        eventType: lead.eventType,
+                        eventName: lead.eventName,
+                        market: lead.market,
+                        estimateData: lead.estimateData,
+                        quotationData: lead.quotationData,
+                      }}
+                    />
                   </td>
                   <td className="p-3 text-sm text-muted-foreground">
                     {new Date(lead.createdAt).toLocaleDateString("en-IN", {

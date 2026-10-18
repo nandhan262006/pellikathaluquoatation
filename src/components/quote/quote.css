@@ -1,0 +1,387 @@
+/* ==========================================================================
+   Pelli Kathalu — 8-page quotation document styles.
+   Fixed px scale: one .qpage = A4 (794 x 1123 @96dpi) so print maps 1:1.
+   ========================================================================== */
+
+.quote-doc {
+  --paper: #f5efe3;
+  --paper2: #eee5d6;
+  --forest: #254d38;
+  --sage: #87977a;
+  --gold: #b58a50;
+  --gold-soft: #c9a86a;
+  --peach: #d89a7e;
+  --ink: #28251f;
+  --ink-soft: #4d463a;
+  --line: #c7b99f;
+  --line-fine: #e0d3ba;
+}
+
+.qstack {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 32px;
+  padding: 32px 0 64px;
+}
+
+.qpage {
+  position: relative;
+  width: 794px;
+  height: 1123px;
+  flex-shrink: 0;
+  overflow: hidden;
+  background-color: var(--paper);
+  /* subtle ivory paper texture */
+  background-image:
+    radial-gradient(ellipse 900px 600px at 20% 0%, rgba(255, 255, 255, 0.35), transparent 60%),
+    radial-gradient(ellipse 700px 500px at 90% 100%, rgba(199, 185, 159, 0.18), transparent 65%);
+  color: var(--ink);
+  font-family: var(--font-lora), "Lora", Georgia, serif;
+  font-size: 12.5px;
+  line-height: 1.6;
+  print-color-adjust: exact;
+  -webkit-print-color-adjust: exact;
+  box-shadow: 0 1px 4px rgba(40, 37, 31, 0.14);
+}
+
+.qpage * {
+  box-sizing: border-box;
+}
+
+/* --- knot watermark (behind all content, blends into the paper) --- */
+.q-watermark {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 100%;
+  max-width: none;
+  height: auto;
+  opacity: 0.18;
+  z-index: 0;
+  pointer-events: none;
+  user-select: none;
+}
+
+/* --- page frame ---------------------------------------------------------- */
+.qframe {
+  position: absolute;
+  inset: 16px;
+  border: 1px solid var(--line);
+  pointer-events: none;
+  z-index: 4;
+}
+
+/* --- header: page number + section label --------------------------------- */
+.qhead {
+  position: absolute;
+  top: 36px;
+  left: 42px;
+  right: 42px;
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  z-index: 3;
+}
+
+.qnum {
+  font-family: var(--font-cormorant), "Cormorant Garamond", serif;
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: 2px;
+  color: var(--gold);
+}
+
+.qlabel {
+  font-size: 10px;
+  letter-spacing: 2.5px;
+  text-transform: uppercase;
+  color: var(--ink);
+  font-weight: 600;
+}
+
+/* --- footer --------------------------------------------------------------- */
+.qfoot {
+  position: absolute;
+  bottom: 32px;
+  left: 42px;
+  right: 42px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  font-size: 9.5px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--ink);
+  font-weight: 600;
+  z-index: 3;
+}
+
+.qfoot-lotus {
+  color: var(--gold);
+  display: inline-flex;
+}
+
+/* --- default content zone ------------------------------------------------- */
+.qbody {
+  position: absolute;
+  top: 78px;
+  bottom: 84px;
+  left: 42px;
+  right: 42px;
+  z-index: 2;
+  /* Content never paints into the reserved corner-art zone below this box */
+  overflow: hidden;
+}
+
+/* --- typography ------------------------------------------------------------ */
+.qserif {
+  font-family: var(--font-cormorant), "Cormorant Garamond", serif;
+}
+
+.q-h1 {
+  font-family: var(--font-cormorant), "Cormorant Garamond", serif;
+  font-weight: 600;
+  font-size: 50px;
+  line-height: 1.02;
+  color: var(--ink);
+}
+
+.q-italic {
+  font-family: var(--font-cormorant), "Cormorant Garamond", serif;
+  font-style: italic;
+  font-weight: 600;
+  color: var(--peach);
+}
+
+.q-smallcaps {
+  font-size: 10px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  font-weight: 600;
+}
+
+/* --- ornaments ------------------------------------------------------------- */
+.q-divider {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--gold);
+}
+
+.q-divider::before,
+.q-divider::after {
+  content: "";
+  height: 1px;
+  background: var(--line);
+  flex: 1;
+}
+
+.q-divider-lotus {
+  color: var(--gold);
+  display: inline-flex;
+}
+
+/* --- tables ----------------------------------------------------------------- */
+.qtable {
+  width: 100%;
+  border-collapse: collapse;
+  background: transparent;
+}
+
+.qtable th {
+  background: var(--forest);
+  color: #f3ecdd;
+  font-family: var(--font-lora), serif;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  text-align: left;
+  padding: 9px 14px;
+}
+
+.qtable td {
+  border: 1px solid var(--line-fine);
+  padding: 11px 15px;
+  font-size: 12px;
+  vertical-align: middle;
+  color: var(--ink);
+}
+
+.qtable tr.qrow-alt td {
+  background: rgba(216, 154, 126, 0.07);
+}
+
+.qtable-icon {
+  display: inline-flex;
+  color: var(--gold);
+  vertical-align: middle;
+}
+
+/* Body copy: slightly heavier so it doesn't look faint on the textured paper */
+.qbody p,
+.q-info-panel p {
+  font-weight: 500;
+}
+
+/* density modifiers for the add-ons table */
+.qtable--tight td { padding: 7px 14px; }
+.qtable--tight th { padding: 8px 14px; }
+.qtable--compact td { padding: 5.5px 14px; font-size: 10.5px; }
+.qtable--compact th { padding: 7px 14px; }
+
+/* --- pricing panel (page 04) ------------------------------------------------ */
+.q-charge-box {
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.35);
+}
+
+.q-charge-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 15px 18px;
+  border-bottom: 1px solid var(--line-fine);
+}
+
+.q-total-row {
+  background: var(--forest);
+  color: #f3ecdd;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 13px 18px;
+}
+
+/* --- green circle (cover) ---------------------------------------------------- */
+.q-cover-circle {
+  background: var(--forest);
+  color: #f3ecdd;
+  border-radius: 9999px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+/* --- info panel (page 06) ---------------------------------------------------- */
+.q-info-panel {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border: 1px solid var(--line-fine);
+  background: rgba(255, 255, 255, 0.3);
+  padding: 12px 16px;
+  border-radius: 10px;
+}
+
+/* --- terms list (page 07) ----------------------------------------------------- */
+.q-term-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 16px 0;
+}
+
+.q-term-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 9999px;
+  border: 1px solid var(--line);
+  color: var(--gold);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  background: rgba(255, 255, 255, 0.25);
+}
+
+/* --- contact rows (page 08) --------------------------------------------------- */
+.q-contact-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  justify-content: center;
+}
+
+.q-contact-icon {
+  width: 26px;
+  height: 26px;
+  border-radius: 9999px;
+  background: var(--forest);
+  color: #f3ecdd;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+/* ==========================================================================
+   PRINT
+   ========================================================================== */
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 0;
+  }
+
+  html,
+  body {
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #ffffff !important;
+    height: auto !important;
+    overflow: visible !important;
+  }
+
+  /* Hide everything except the dedicated print root (a direct body child
+     rendered via portal). display:none removes flow space entirely, so the
+     document paginates naturally from the first sheet. */
+  body > *:not(.quote-print-root) {
+    display: none !important;
+  }
+
+  .quote-print-root {
+    display: block !important;
+    position: static !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  .quote-print-root .qstack {
+    display: block !important;
+    padding: 0 !important;
+    gap: 0 !important;
+  }
+
+  .qpage {
+    width: 210mm !important;
+    height: 296.5mm !important;
+    box-shadow: none !important;
+    page-break-after: always;
+    break-after: page;
+  }
+
+  .qpage:last-child {
+    page-break-after: auto;
+    break-after: auto;
+  }
+
+  /* Keep table rows together */
+  .qtable tr,
+  .q-term-row,
+  .q-contact-row {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+}
+
+/* Print root is hidden on screen (it exists only for the print flow) */
+.quote-print-root {
+  display: none;
+}

@@ -176,6 +176,8 @@ export function buildQuotationData(lead: {
   if (estimate && estimate.items.length > 0) {
     const bySub = new Map<string, { label: string; value: number }[]>();
     for (const item of estimate.items) {
+      // Album is a line item, not an event — keep it out of the schedule.
+      if (item.group === "Albums") continue;
       const subName = item.detail ?? "";
       if (!bySub.has(subName)) bySub.set(subName, []);
       bySub.get(subName)!.push({ label: item.label, value: item.value });

@@ -84,8 +84,8 @@ export function calculateEstimate(
       items.push({
         id: "album",
         group: "Albums",
-        label: `${albumState.count} album${albumState.count > 1 ? "s" : ""}`,
-        detail: `${size.name}, ${albumState.pages} pages each`,
+        label: `${albumState.count} ${size.name} album${albumState.count > 1 ? "s" : ""} (${albumState.pages} pages each)`,
+        detail: "Album",
         value: albumTotal,
       });
       total += albumTotal;

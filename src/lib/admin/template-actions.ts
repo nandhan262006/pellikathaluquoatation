@@ -85,7 +85,8 @@ export async function upsertSubEvent(data: {
   defaultSelected: boolean;
   maxReels: number | null;
   sortOrder: number;
-  priceOverrides: Record<string, unknown>;
+  /** Optional — when undefined, existing overrides are left untouched. */
+  priceOverrides?: Record<string, unknown>;
   templateId: number;
 }) {
   await requireAdmin();
@@ -97,13 +98,24 @@ export async function upsertSubEvent(data: {
     defaultSelected: data.defaultSelected ? 1 : 0,
     maxReels: data.maxReels,
     sortOrder: data.sortOrder,
-    priceOverrides: JSON.stringify(data.priceOverrides),
     templateId: data.templateId,
   };
   if (data.id) {
-    await db.update(subEvent).set(payload).where(eq(subEvent.id, data.id));
+    // Only write overrides when explicitly provided, so an edit of
+    // name/description cannot silently erase stored per-sub-event pricing.
+    await db
+      .update(subEvent)
+      .set(
+        data.priceOverrides === undefined
+          ? payload
+          : { ...payload, priceOverrides: JSON.stringify(data.priceOverrides) },
+      )
+      .where(eq(subEvent.id, data.id));
   } else {
-    await db.insert(subEvent).values(payload);
+    await db.insert(subEvent).values({
+      ...payload,
+      priceOverrides: JSON.stringify(data.priceOverrides ?? {}),
+    });
   }
   revalidatePath("/admin/templates");
   revalidatePath("/estimator");

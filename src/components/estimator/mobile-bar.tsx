@@ -35,7 +35,7 @@ export function MobileEstimateBar() {
             <ReceiptIndianRupee className="size-3.5 text-muted-foreground" />
             <span className="text-[10px] text-muted-foreground leading-none">Estimate</span>
           </div>
-          {total ? (
+          {total !== null ? (
             <span className="text-xs font-semibold tabular-nums leading-tight">
               {formatMoney(total, state.market)}
             </span>
@@ -85,7 +85,7 @@ export function MobileEstimateBar() {
           </div>
 
           {/* Footer */}
-          {total && (
+          {total !== null && (
             <div className="border-t px-4 py-4">
               <div className="flex items-center justify-between">
                 <span className="text-sm text-muted-foreground">Estimated Total</span>

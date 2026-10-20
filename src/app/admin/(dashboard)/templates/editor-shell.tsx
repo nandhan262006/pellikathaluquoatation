@@ -130,6 +130,7 @@ function EventsEditor({
 }) {
   const router = useRouter();
   const [editing, setEditing] = useState<number | null>(null);
+  const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({
     typeId: "", name: "", tagline: "", description: "",
     icon: "heart", isActive: 1 as number,
@@ -156,6 +157,8 @@ function EventsEditor({
   };
 
   const save = async () => {
+    if (saving) return;
+    setSaving(true);
     try {
       const templateId = editing === NEW_ID ? undefined : editing ?? undefined;
       const existing = typeof templateId === "number" ? templates.find((t) => t.id === templateId) : null;
@@ -165,6 +168,8 @@ function EventsEditor({
       router.refresh();
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Failed to save");
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -248,7 +253,7 @@ function EventsEditor({
             <Label htmlFor="ea">Active</Label>
           </div>
           <div className="sm:col-span-2 flex gap-2">
-            <Button onClick={save}>Save</Button>
+            <Button onClick={save} disabled={saving}>Save</Button>
             <Button variant="outline" onClick={() => setEditing(null)}>Cancel</Button>
           </div>
         </div>
@@ -286,6 +291,7 @@ function SubEventsEditor({
   const tmpl = templates.find((t) => t.id === selectedTemplate);
   const [form, setForm] = useState({ subEventId: "", name: "", description: "", defaultSelected: false, maxReels: "", sortOrder: 0 });
   const [editing, setEditing] = useState<number | null>(null);
+  const [saving, setSaving] = useState(false);
 
   const startEdit = (se?: SubEvent) => {
     if (se) {
@@ -299,7 +305,16 @@ function SubEventsEditor({
 
   const save = async () => {
     if (!selectedTemplate || !form.subEventId || !form.name) { toast.error("ID and name required"); return; }
+    if (saving) return;
+    setSaving(true);
     try {
+      // Editing an existing sub-event must carry through its stored
+      // priceOverrides — upsertSubEvent only writes overrides when provided,
+      // but passing {} explicitly would erase them.
+      const existing =
+        editing !== NEW_SUB_ID && editing
+          ? tmpl?.subEvents.find((se) => se.id === editing)
+          : null;
       await upsertSubEvent({
         id: editing === NEW_SUB_ID ? undefined : editing ?? undefined,
         subEventId: form.subEventId,
@@ -308,7 +323,9 @@ function SubEventsEditor({
         defaultSelected: form.defaultSelected,
         maxReels: form.maxReels ? Number(form.maxReels) : null,
         sortOrder: form.sortOrder,
-        priceOverrides: {},
+        priceOverrides: existing
+          ? safeParse<Record<string, unknown>>(existing.priceOverrides) ?? {}
+          : {},
         templateId: selectedTemplate,
       });
       toast.success("Saved");
@@ -316,6 +333,8 @@ function SubEventsEditor({
       router.refresh();
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Failed to save");
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -366,7 +385,7 @@ function SubEventsEditor({
                 <Input type="number" value={form.maxReels} onChange={(e) => setForm({ ...form, maxReels: e.target.value })} />
               </div>
               <div className="sm:col-span-2 flex gap-2">
-                <Button size="sm" onClick={save}>Save</Button>
+                <Button size="sm" onClick={save} disabled={saving}>Save</Button>
                 <Button size="sm" variant="outline" onClick={() => setEditing(null)}>Cancel</Button>
               </div>
             </div>
@@ -402,6 +421,7 @@ function ReelsEditor({ templates }: { templates: Template[] }) {
   const router = useRouter();
   const [editing, setEditing] = useState<number | null>(null);
   const [maxReels, setMaxReels] = useState(3);
+  const [saving, setSaving] = useState(false);
 
   const startEdit = (t?: Template) => {
     if (t) {
@@ -411,9 +431,10 @@ function ReelsEditor({ templates }: { templates: Template[] }) {
   };
 
   const save = async () => {
-    if (!editing) return;
+    if (!editing || saving) return;
     const t = templates.find((t) => t.id === editing);
     if (!t) return;
+    setSaving(true);
     try {
       await upsertTemplate({
         id: editing,
@@ -429,6 +450,8 @@ function ReelsEditor({ templates }: { templates: Template[] }) {
       router.refresh();
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Failed to save");
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -448,7 +471,7 @@ function ReelsEditor({ templates }: { templates: Template[] }) {
                 <Input type="number" value={maxReels} onChange={(e) => setMaxReels(Number(e.target.value))} />
               </div>
               <div className="flex gap-2">
-                <Button size="sm" onClick={save}>Save</Button>
+                <Button size="sm" onClick={save} disabled={saving}>Save</Button>
                 <Button size="sm" variant="outline" onClick={() => setEditing(null)}>Cancel</Button>
               </div>
             </div>
@@ -475,6 +498,7 @@ function PricesEditor({
   const [prices, setPrices] = useState<Record<string, string>>({});
   const [addonPrices, setAddonPrices] = useState<Record<string, string>>({});
   const [reelPrice, setReelPrice] = useState("");
+  const [saving, setSaving] = useState(false);
 
   const tmpl = templates.find((t) => t.id === selectedTemplate);
 
@@ -495,7 +519,8 @@ function PricesEditor({
   };
 
   const save = async () => {
-    if (!selectedTemplate || !tmpl) return;
+    if (!selectedTemplate || !tmpl || saving) return;
+    setSaving(true);
     const coverage: Record<string, number> = {};
     const addOns: Record<string, number> = {};
     for (const [key, val] of Object.entries(prices)) { if (val) coverage[key] = Number(val); }
@@ -517,6 +542,8 @@ function PricesEditor({
       router.refresh();
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Failed to save");
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -589,7 +616,7 @@ function PricesEditor({
           </div>
 
           <div>
-            <Button onClick={save}>Save Default Prices</Button>
+            <Button onClick={save} disabled={saving}>Save Default Prices</Button>
           </div>
         </div>
       )}
@@ -607,12 +634,15 @@ function OptionsEditor({ options }: { options: CatalogOption[] }) {
     icon: string;
     description: string;
   }>({ optionId: "", kind: "addon", label: "", icon: "wand", description: "" });
+  const [saving, setSaving] = useState(false);
 
   const coverageOptions = options.filter((o) => o.kind === "coverage");
   const addOnOptions = options.filter((o) => o.kind === "addon");
 
   const save = async () => {
     if (!form.optionId || !form.label) { toast.error("ID and label required"); return; }
+    if (saving) return;
+    setSaving(true);
     try {
       await createOption(form);
       toast.success("Option added");
@@ -621,6 +651,8 @@ function OptionsEditor({ options }: { options: CatalogOption[] }) {
       router.refresh();
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Failed to add option");
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -677,7 +709,7 @@ function OptionsEditor({ options }: { options: CatalogOption[] }) {
             <Input value={form.description} placeholder="Short description shown in the estimator" onChange={(e) => setForm({ ...form, description: e.target.value })} />
           </div>
           <div className="sm:col-span-2 flex gap-2">
-            <Button size="sm" onClick={save}>Save</Button>
+            <Button size="sm" onClick={save} disabled={saving}>Save</Button>
             <Button size="sm" variant="outline" onClick={() => setAdding(false)}>Cancel</Button>
           </div>
         </div>

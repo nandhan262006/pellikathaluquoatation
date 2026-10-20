@@ -25,7 +25,18 @@ export function AlbumStep() {
       <div className="grid grid-cols-2 gap-2">
         <button
           type="button"
-          onClick={() => dispatch({ type: "SET_ALBUM_REQUIRED", required: true })}
+          onClick={() => {
+            dispatch({ type: "SET_ALBUM_REQUIRED", required: true });
+            // Default the album type so deliverables can reference it even if
+            // the user never touches the type picker below.
+            if (!album.typeId && template.album.types.length > 0) {
+              dispatch({
+                type: "SET_ALBUM_FIELD",
+                field: "typeId",
+                value: template.album.types[0].id,
+              });
+            }
+          }}
           aria-pressed={album.required}
           className={cn(
             "rounded-lg border py-2.5 text-sm font-medium transition-all",
@@ -53,6 +64,28 @@ export function AlbumStep() {
 
       {album.required && (
         <div className="flex flex-col gap-5 rounded-xl border p-4">
+          <div className="flex flex-col gap-2">
+            <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+              Album type
+            </span>
+            <div className="grid gap-2 sm:grid-cols-2">
+              {template.album.types.map((t) => (
+                <ToggleChip
+                  key={t.id}
+                  label={t.name}
+                  selected={album.typeId === t.id}
+                  onClick={() =>
+                    dispatch({
+                      type: "SET_ALBUM_FIELD",
+                      field: "typeId",
+                      value: t.id,
+                    })
+                  }
+                />
+              ))}
+            </div>
+          </div>
+
           <div className="flex flex-col gap-2">
             <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
               Album size

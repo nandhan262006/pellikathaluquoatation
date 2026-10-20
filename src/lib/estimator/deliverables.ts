@@ -145,7 +145,7 @@ export function generateDeliverableTexts(
       const countWord = numberWord(a.count);
       const albumName = type.name.replace(/ Album$/, "");
       texts.push(
-        `${countWord} ${albumName} Wedding Album${a.count > 1 ? "s" : ""} (${a.pages} sheets each).`,
+        `${countWord} ${albumName} Album${a.count > 1 ? "s" : ""} (${a.pages} pages each).`,
       );
     }
   }
@@ -172,11 +172,6 @@ export function generateDeliverables(
 ): DeliverableGroup[] {
   const groups = new Map<string, Deliverable[]>();
   const groupOrder: string[] = [];
-  const globalIds = new Set(
-    template.deliverableRules
-      .filter((r) => r.when.global)
-      .map((r) => r.id),
-  );
 
   const ensure = (group: string) => {
     if (!groups.has(group)) {
@@ -187,15 +182,19 @@ export function generateDeliverables(
 
   for (const rule of template.deliverableRules) {
     const { when, produce } = rule;
-    if (globalIds.has(rule.id)) continue;
 
+    // Each rule may only appear once, no matter how many coverage/add-on ids
+    // it matches (e.g. a rule listing both photo coverages would otherwise be
+    // pushed twice). Global rules flow through the same branch and show up
+    // under their produce group instead of being dropped.
     if (when.coverage) {
-      for (const coverageId of when.coverage) {
-        const subsWith = state.selectedSubEvents.filter((id) => {
-          if (!subMatchesRule(id, rule)) return false;
-          return state.subEventConfig[id]?.coverage.includes(coverageId);
-        });
-        if (subsWith.length === 0) continue;
+      const subsWith = state.selectedSubEvents.filter((id) => {
+        if (!subMatchesRule(id, rule)) return false;
+        return when.coverage!.some((covId) =>
+          state.subEventConfig[id]?.coverage.includes(covId),
+        );
+      });
+      if (subsWith.length > 0) {
         ensure(produce.group);
         groups.get(produce.group)!.push({
           id: rule.id,
@@ -209,12 +208,13 @@ export function generateDeliverables(
     }
 
     if (when.addOns) {
-      for (const addOnId of when.addOns) {
-        const subsWith = state.selectedSubEvents.filter((id) => {
-          if (!subMatchesRule(id, rule)) return false;
-          return state.subEventConfig[id]?.addOns.includes(addOnId);
-        });
-        if (subsWith.length === 0) continue;
+      const subsWith = state.selectedSubEvents.filter((id) => {
+        if (!subMatchesRule(id, rule)) return false;
+        return when.addOns!.some((addOnId) =>
+          state.subEventConfig[id]?.addOns.includes(addOnId),
+        );
+      });
+      if (subsWith.length > 0) {
         ensure(produce.group);
         groups.get(produce.group)!.push({
           id: rule.id,

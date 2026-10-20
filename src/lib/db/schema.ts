@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { sqliteTable, integer, text } from "drizzle-orm/sqlite-core";
+import { sqliteTable, integer, text, uniqueIndex } from "drizzle-orm/sqlite-core";
 
 export const service = sqliteTable("Service", {
   id: integer("id").primaryKey({ autoIncrement: true }),
@@ -56,7 +56,9 @@ export const eventTemplate = sqliteTable("EventTemplate", {
   defaultPrices: text("defaultPrices").notNull().default("{}"),
   createdAt: text("createdAt").notNull().default(sql`(datetime('now'))`),
   updatedAt: text("updatedAt").notNull().default(sql`(datetime('now'))`),
-});
+}, (table) => [
+  uniqueIndex("eventTemplate_typeId_market_uq").on(table.typeId, table.market),
+]);
 
 export const subEvent = sqliteTable("SubEvent", {
   id: integer("id").primaryKey({ autoIncrement: true }),

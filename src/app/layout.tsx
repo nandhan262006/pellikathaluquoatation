@@ -51,7 +51,7 @@ export default function RootLayout({
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} ${cormorant.variable} ${lora.variable} h-full antialiased`}
     >
-      <body className="h-screen w-full flex flex-col">
+      <body className="min-h-screen w-full flex flex-col">
         <div className="min-h-0 flex-1 flex flex-col">{children}</div>
         <Footer />
         <Toaster />

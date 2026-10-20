@@ -1,3 +1,4 @@
+import { sql } from "drizzle-orm";
 import { sqliteTable, integer, text } from "drizzle-orm/sqlite-core";
 
 export const service = sqliteTable("Service", {
@@ -8,8 +9,8 @@ export const service = sqliteTable("Service", {
   price: text("price").notNull(),
   image: text("image"),
   isActive: integer("isActive").notNull().default(1),
-  createdAt: text("createdAt").notNull().default("(datetime('now'))"),
-  updatedAt: text("updatedAt").notNull().default("(datetime('now'))"),
+  createdAt: text("createdAt").notNull().default(sql`(datetime('now'))`),
+  updatedAt: text("updatedAt").notNull().default(sql`(datetime('now'))`),
 });
 
 export const photographer = sqliteTable("Photographer", {
@@ -20,7 +21,7 @@ export const photographer = sqliteTable("Photographer", {
   bio: text("bio"),
   image: text("image"),
   isActive: integer("isActive").notNull().default(1),
-  createdAt: text("createdAt").notNull().default("(datetime('now'))"),
+  createdAt: text("createdAt").notNull().default(sql`(datetime('now'))`),
 });
 
 export const booking = sqliteTable("Booking", {
@@ -34,7 +35,7 @@ export const booking = sqliteTable("Booking", {
   endTime: text("endTime").notNull(),
   totalPrice: text("totalPrice").notNull(),
   status: text("status").notNull().default("confirmed"),
-  createdAt: text("createdAt").notNull().default("(datetime('now'))"),
+  createdAt: text("createdAt").notNull().default(sql`(datetime('now'))`),
   serviceId: integer("serviceId").notNull().references(() => service.id),
   photographerId: integer("photographerId").notNull().references(() => photographer.id),
 });
@@ -53,8 +54,8 @@ export const eventTemplate = sqliteTable("EventTemplate", {
   coverageOptions: text("coverageOptions").notNull().default("[]"),
   addOnOptions: text("addOnOptions").notNull().default("[]"),
   defaultPrices: text("defaultPrices").notNull().default("{}"),
-  createdAt: text("createdAt").notNull().default("(datetime('now'))"),
-  updatedAt: text("updatedAt").notNull().default("(datetime('now'))"),
+  createdAt: text("createdAt").notNull().default(sql`(datetime('now'))`),
+  updatedAt: text("updatedAt").notNull().default(sql`(datetime('now'))`),
 });
 
 export const subEvent = sqliteTable("SubEvent", {
@@ -89,5 +90,5 @@ export const estimateLead = sqliteTable("EstimateLead", {
   estimateData: text("estimateData").notNull().default("{}"),
   quotationData: text("quotationData").notNull().default("{}"),
   status: text("status").notNull().default("pending"),
-  createdAt: text("createdAt").notNull().default("(datetime('now'))"),
+  createdAt: text("createdAt").notNull().default(sql`(datetime('now'))`),
 });

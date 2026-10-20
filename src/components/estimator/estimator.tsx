@@ -41,9 +41,23 @@ function EstimatorShell() {
     if (state.step < 7 || !state.clientName || !state.clientPhone || !state.eventTypeId) {
       return;
     }
+    // Dedupe on quote content only — NOT on raw state, which includes
+    // state.step (moving Estimate -> Download would otherwise re-save an
+    // identical lead and create duplicates).
+    const saveKey = JSON.stringify([
+      state.clientName,
+      state.clientPhone,
+      state.eventTypeId,
+      state.market,
+      template?.id ?? null,
+      state.selectedSubEvents,
+      state.subEventConfig,
+      state.album,
+      estimate?.total ?? 0,
+    ]);
+    if (savedDataRef.current === saveKey) return;
+    savedDataRef.current = saveKey;
     const estimateJSON = JSON.stringify({ state, estimate, deliverables });
-    if (savedDataRef.current === estimateJSON) return;
-    savedDataRef.current = estimateJSON;
     saveEstimateLead({
       clientName: state.clientName,
       clientPhone: state.clientPhone,

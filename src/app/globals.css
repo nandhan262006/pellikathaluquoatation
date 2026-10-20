@@ -261,7 +261,7 @@ html, body {
     background: #ffffff !important;
   }
 
-  body > *:not(.estimate-print-root) {
+  body > *:not(.estimate-print-root):not(.quote-print-root) {
     display: none !important;
   }
 

@@ -342,7 +342,7 @@
   /* Hide everything except the dedicated print root (a direct body child
      rendered via portal). display:none removes flow space entirely, so the
      document paginates naturally from the first sheet. */
-  body > *:not(.quote-print-root) {
+  body > *:not(.estimate-print-root):not(.quote-print-root) {
     display: none !important;
   }
 

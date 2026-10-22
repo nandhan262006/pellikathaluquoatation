@@ -7,13 +7,21 @@ export const dynamic = "force-dynamic";
  * DEV-ONLY preview of the quotation document for visual verification.
  * NOT linked anywhere; renders default sample data.
  * Query: ?services=N overrides the add-on service count.
+ * ?events=N / ?charges=N / ?timeline=N / ?terms=N pad those sections.
  */
 export default async function QuotePreviewPage({
   searchParams,
 }: {
-  searchParams: Promise<{ services?: string; dialog?: string }>;
+  searchParams: Promise<{
+    services?: string;
+    dialog?: string;
+    events?: string;
+    charges?: string;
+    timeline?: string;
+    terms?: string;
+  }>;
 }) {
-  const { services, dialog } = await searchParams;
+  const { services, dialog, events, charges, timeline, terms } = await searchParams;
   const data = buildQuotationData({
     clientName: "Kavya",
     clientPhone: "8522888119",
@@ -72,6 +80,61 @@ export default async function QuotePreviewPage({
       icon: "social",
       unit: i % 4 === 1 ? "per day" : "",
     }));
+  }
+
+  const padCount = (raw?: string) =>
+    Math.max(0, Math.min(60, parseInt(raw ?? "", 10) || 0));
+
+  if (events) {
+    const n = padCount(events);
+    for (let i = data.events.length; i < n; i++) {
+      data.events.push({
+        id: `extra-ev-${i}`,
+        name: `EXTRA EVENT ${i + 1}`,
+        date: "Nov 2",
+        team: "1 Photographer / 1 Videographer",
+        icon: "rings",
+      });
+    }
+  }
+
+  if (charges) {
+    const n = padCount(charges);
+    for (let i = data.charges.length; i < n; i++) {
+      data.charges.push({
+        id: `extra-charge-${i}`,
+        label: `Extra Charge ${i + 1}`,
+        amount: `₹ ${(i + 1) * 10},000`,
+      });
+    }
+  }
+
+  if (timeline) {
+    const n = padCount(timeline);
+    for (let i = data.timeline.length; i < n; i++) {
+      data.timeline.push({
+        id: `extra-tl-${i}`,
+        output: `Extra Output ${i + 1}`,
+        outputDetail: i % 3 === 0 ? "(detail line)" : undefined,
+        time: "30 days",
+        revisions: "NA",
+      });
+    }
+  }
+
+  if (terms) {
+    const n = padCount(terms);
+    for (let i = data.terms.length; i < n; i++) {
+      data.terms.push({
+        id: `extra-term-${i}`,
+        icon: "calendar",
+        title: `Extra Term ${i + 1}`,
+        body:
+          i % 3 === 0
+            ? "A longer terms entry to exercise the height estimate for variable body text, spanning several wrapped lines of copy before the next row begins."
+            : "Standard short terms entry.",
+      });
+    }
   }
 
   if (dialog) {

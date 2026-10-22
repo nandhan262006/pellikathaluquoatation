@@ -1,9 +1,31 @@
 import Image from "next/image";
 import { QuoteIcon } from "../icons";
 import { QuotePage } from "../page-shell";
-import type { QuotationData } from "@/lib/quote/types";
+import type { QuotationData, QuoteCharge } from "@/lib/quote/types";
+import type { AddonDensity } from "@/lib/quote/paginate";
 
-export function DeliverablesPage({ data, number }: { data: QuotationData; number: number }) {
+export function DeliverablesPage({
+  data,
+  number,
+  charges,
+  density = "roomy",
+  continued = false,
+  isLast = true,
+}: {
+  data: QuotationData;
+  number: number;
+  charges: QuoteCharge[];
+  density?: AddonDensity;
+  continued?: boolean;
+  isLast?: boolean;
+}) {
+  const chargeBoxClass =
+    density === "compact"
+      ? "q-charge-box q-charge-box--compact"
+      : density === "tight"
+        ? "q-charge-box q-charge-box--tight"
+        : "q-charge-box";
+
   return (
     <QuotePage
       number={number}
@@ -28,122 +50,133 @@ export function DeliverablesPage({ data, number }: { data: QuotationData; number
         />
       }
     >
-      <div style={{ position: "relative", zIndex: 2, padding: "6px 18px 0" }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-          <h1 className="q-h1">
-            Moments
-            <br />
-            to <span className="q-italic">Relive</span>
+      <div style={{ position: "relative", zIndex: 2, padding: continued ? "2px 18px 0" : "6px 18px 0" }}>
+        {continued ? (
+          <h1 className="q-h1" style={{ fontSize: 34 }}>
+            Charges
+            <span className="q-smallcaps" style={{ fontSize: 9, marginLeft: 14, letterSpacing: 2 }}>
+              — Continued
+            </span>
           </h1>
-          <div style={{ textAlign: "right", paddingTop: 10 }}>
-            {data.deliverablesSideText.map((w) => (
-              <div key={w} className="q-smallcaps" style={{ lineHeight: 1.75 }}>
-                {w}
+        ) : (
+          <>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+              <h1 className="q-h1">
+                Moments
+                <br />
+                to <span className="q-italic">Relive</span>
+              </h1>
+              <div style={{ textAlign: "right", paddingTop: 10 }}>
+                {data.deliverablesSideText.map((w) => (
+                  <div key={w} className="q-smallcaps" style={{ lineHeight: 1.75 }}>
+                    {w}
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Photos / Videos columns */}
-        <div style={{ display: "flex", gap: 30, marginTop: 30 }}>
-          <div style={{ flex: 1 }}>
-            <span
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                justifyContent: "center",
-                width: 44,
-                height: 44,
-                border: "1px solid var(--line)",
-                borderRadius: 9,
-                color: "var(--ink)",
-                background: "rgba(255,255,255,0.35)",
-              }}
-            >
-              <QuoteIcon name="camera" size={22} />
-            </span>
-            <div
-              style={{
-                fontSize: 13,
-                fontWeight: 600,
-                letterSpacing: 2.5,
-                marginTop: 14,
-                textTransform: "uppercase",
-              }}
-            >
-              {data.photosTitle}
             </div>
-            <div
-              className="q-smallcaps"
-              style={{ marginTop: 6, fontWeight: 600, color: "var(--ink)", fontSize: 11 }}
-            >
-              {data.photosApprox}
-            </div>
-            <div
-              className="q-smallcaps"
-              style={{ marginTop: 3, fontWeight: 600, color: "var(--ink)", fontSize: 11 }}
-            >
-              Edited high resolution images.
-            </div>
-            <p style={{ fontSize: 11.5, lineHeight: 1.7, marginTop: 14, color: "var(--ink-soft)" }}>
-              {data.photosBody}
-            </p>
-          </div>
 
-          <div style={{ width: 1, background: "var(--line-fine)", alignSelf: "stretch" }} />
+            {/* Photos / Videos columns */}
+            <div style={{ display: "flex", gap: 30, marginTop: 30 }}>
+              <div style={{ flex: 1 }}>
+                <span
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    width: 44,
+                    height: 44,
+                    border: "1px solid var(--line)",
+                    borderRadius: 9,
+                    color: "var(--ink)",
+                    background: "rgba(255,255,255,0.35)",
+                  }}
+                >
+                  <QuoteIcon name="camera" size={22} />
+                </span>
+                <div
+                  style={{
+                    fontSize: 13,
+                    fontWeight: 600,
+                    letterSpacing: 2.5,
+                    marginTop: 14,
+                    textTransform: "uppercase",
+                  }}
+                >
+                  {data.photosTitle}
+                </div>
+                <div
+                  className="q-smallcaps"
+                  style={{ marginTop: 6, fontWeight: 600, color: "var(--ink)", fontSize: 11 }}
+                >
+                  {data.photosApprox}
+                </div>
+                <div
+                  className="q-smallcaps"
+                  style={{ marginTop: 3, fontWeight: 600, color: "var(--ink)", fontSize: 11 }}
+                >
+                  Edited high resolution images.
+                </div>
+                <p style={{ fontSize: 11.5, lineHeight: 1.7, marginTop: 14, color: "var(--ink-soft)" }}>
+                  {data.photosBody}
+                </p>
+              </div>
 
-          <div style={{ flex: 1 }}>
-            <span
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                justifyContent: "center",
-                width: 44,
-                height: 44,
-                border: "1px solid var(--line)",
-                borderRadius: 9,
-                color: "var(--ink)",
-                background: "rgba(255,255,255,0.35)",
-              }}
-            >
-              <QuoteIcon name="video" size={22} />
-            </span>
-            <div
-              style={{
-                fontSize: 13,
-                fontWeight: 600,
-                letterSpacing: 2.5,
-                marginTop: 14,
-                textTransform: "uppercase",
-              }}
-            >
-              {data.videosTitle}
+              <div style={{ width: 1, background: "var(--line-fine)", alignSelf: "stretch" }} />
+
+              <div style={{ flex: 1 }}>
+                <span
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    width: 44,
+                    height: 44,
+                    border: "1px solid var(--line)",
+                    borderRadius: 9,
+                    color: "var(--ink)",
+                    background: "rgba(255,255,255,0.35)",
+                  }}
+                >
+                  <QuoteIcon name="video" size={22} />
+                </span>
+                <div
+                  style={{
+                    fontSize: 13,
+                    fontWeight: 600,
+                    letterSpacing: 2.5,
+                    marginTop: 14,
+                    textTransform: "uppercase",
+                  }}
+                >
+                  {data.videosTitle}
+                </div>
+                <div
+                  className="q-smallcaps"
+                  style={{ marginTop: 6, fontWeight: 600, color: "var(--ink)", fontSize: 11, whiteSpace: "pre-line" }}
+                >
+                  {data.videosApprox}
+                </div>
+                <p style={{ fontSize: 11.5, lineHeight: 1.7, marginTop: 14, color: "var(--ink-soft)" }}>
+                  {data.videosBody}
+                </p>
+              </div>
             </div>
-            <div
-              className="q-smallcaps"
-              style={{ marginTop: 6, fontWeight: 600, color: "var(--ink)", fontSize: 11, whiteSpace: "pre-line" }}
-            >
-              {data.videosApprox}
+
+            {/* CHARGES */}
+            <div style={{ textAlign: "center", marginTop: 30, marginBottom: 14 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 14, justifyContent: "center" }}>
+                <span style={{ height: 1, background: "var(--line)", width: 110 }} />
+                <span className="q-smallcaps" style={{ color: "var(--gold)", fontWeight: 600 }}>
+                  Charges
+                </span>
+                <span style={{ height: 1, background: "var(--line)", width: 110 }} />
+              </div>
             </div>
-            <p style={{ fontSize: 11.5, lineHeight: 1.7, marginTop: 14, color: "var(--ink-soft)" }}>
-              {data.videosBody}
-            </p>
-          </div>
-        </div>
+          </>
+        )}
 
-        {/* CHARGES */}
-        <div style={{ textAlign: "center", marginTop: 30, marginBottom: 14 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 14, justifyContent: "center" }}>
-            <span style={{ height: 1, background: "var(--line)", width: 110 }} />
-            <span className="q-smallcaps" style={{ color: "var(--gold)", fontWeight: 600 }}>
-              Charges
-            </span>
-            <span style={{ height: 1, background: "var(--line)", width: 110 }} />
-          </div>
-        </div>
-
-        <div className="q-charge-box">
-          {data.charges.map((c) => (
+        <div className={chargeBoxClass} style={continued ? { marginTop: 26 } : undefined}>
+          {charges.map((c) => (
             <div key={c.id} className="q-charge-row">
               <span style={{ fontSize: 11.5, letterSpacing: 1.5, fontWeight: 600, textTransform: "uppercase" }}>
                 {c.label}
@@ -153,22 +186,26 @@ export function DeliverablesPage({ data, number }: { data: QuotationData; number
               </span>
             </div>
           ))}
-          <div className="q-total-row" style={{ flexWrap: "wrap" }}>
-            <div>
-              <div style={{ fontSize: 13.5, fontWeight: 600, letterSpacing: 2 }}>TOTAL</div>
-              <div style={{ fontSize: 9, letterSpacing: 1.5, opacity: 0.85, marginTop: 3 }}>
-                ({data.totalWords})
+          {isLast && (
+            <div className="q-total-row" style={{ flexWrap: "wrap" }}>
+              <div>
+                <div style={{ fontSize: 13.5, fontWeight: 600, letterSpacing: 2 }}>TOTAL</div>
+                <div style={{ fontSize: 9, letterSpacing: 1.5, opacity: 0.85, marginTop: 3 }}>
+                  ({data.totalWords})
+                </div>
               </div>
+              <span className="qserif" style={{ fontSize: 21, fontWeight: 600 }}>
+                {data.total}
+              </span>
             </div>
-            <span className="qserif" style={{ fontSize: 21, fontWeight: 600 }}>
-              {data.total}
-            </span>
-          </div>
+          )}
         </div>
 
-        <p className="q-smallcaps" style={{ marginTop: 14, textAlign: "center", fontSize: 9.5 }}>
-          {data.exclusionsNote}
-        </p>
+        {isLast && (
+          <p className="q-smallcaps" style={{ marginTop: 14, textAlign: "center", fontSize: 9.5 }}>
+            {data.exclusionsNote}
+          </p>
+        )}
       </div>
     </QuotePage>
   );

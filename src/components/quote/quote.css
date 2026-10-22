@@ -234,6 +234,10 @@
 .qtable--compact td { padding: 5.5px 14px; font-size: 10.5px; }
 .qtable--compact th { padding: 7px 14px; }
 
+/* density modifiers for the charges panel */
+.q-charge-box--tight .q-charge-row { padding: 11px 18px; }
+.q-charge-box--compact .q-charge-row { padding: 8px 18px; }
+
 /* --- pricing panel (page 04) ------------------------------------------------ */
 .q-charge-box {
   border: 1px solid var(--line);

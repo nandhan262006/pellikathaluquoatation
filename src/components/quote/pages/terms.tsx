@@ -1,9 +1,17 @@
 import Image from "next/image";
 import { QuoteIcon } from "../icons";
 import { QuotePage } from "../page-shell";
-import type { QuotationData } from "@/lib/quote/types";
+import type { QuoteTerm } from "@/lib/quote/types";
 
-export function TermsPage({ data, number }: { data: QuotationData; number: number }) {
+export function TermsPage({
+  number,
+  terms,
+  continued = false,
+}: {
+  number: number;
+  terms: QuoteTerm[];
+  continued?: boolean;
+}) {
   return (
     <QuotePage
       number={number}
@@ -28,12 +36,29 @@ export function TermsPage({ data, number }: { data: QuotationData; number: numbe
         />
       }
     >
-      <div style={{ padding: "4px 18px 0", position: "relative", zIndex: 2 }}>
-        {data.terms.map((term, i) => (
+      <div style={{ padding: continued ? "2px 18px 0" : "4px 18px 0", position: "relative", zIndex: 2 }}>
+        {continued && (
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 12,
+              justifyContent: "center",
+              marginBottom: 10,
+            }}
+          >
+            <span style={{ height: 1, background: "var(--line)", width: 60 }} />
+            <span className="q-smallcaps" style={{ fontSize: 9.5 }}>
+              Terms &amp; Conditions — Continued
+            </span>
+            <span style={{ height: 1, background: "var(--line)", width: 60 }} />
+          </div>
+        )}
+        {terms.map((term, i) => (
           <div
             key={term.id}
             className="q-term-row"
-            style={{ borderBottom: i < data.terms.length - 1 ? "1px solid var(--line-fine)" : "none" }}
+            style={{ borderBottom: i < terms.length - 1 ? "1px solid var(--line-fine)" : "none" }}
           >
             <span className="q-term-icon">
               <QuoteIcon name={term.icon} size={18} />

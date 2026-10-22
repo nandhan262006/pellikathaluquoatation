@@ -1,9 +1,25 @@
 import Image from "next/image";
 import { QuoteIcon } from "../icons";
 import { QuotePage } from "../page-shell";
-import type { QuotationData } from "@/lib/quote/types";
+import type { QuotationData, QuoteEvent } from "@/lib/quote/types";
+import type { AddonDensity } from "@/lib/quote/paginate";
 
-export function PlanPage({ data, number }: { data: QuotationData; number: number }) {
+export function PlanPage({
+  data,
+  number,
+  events,
+  density = "roomy",
+  continued = false,
+}: {
+  data: QuotationData;
+  number: number;
+  events: QuoteEvent[];
+  density?: AddonDensity;
+  continued?: boolean;
+}) {
+  const tableClass =
+    density === "compact" ? "qtable qtable--compact" : density === "tight" ? "qtable qtable--tight" : "qtable";
+
   return (
     <QuotePage
       number={number}
@@ -28,21 +44,17 @@ export function PlanPage({ data, number }: { data: QuotationData; number: number
         />
       }
     >
-      <div style={{ padding: "14px 18px 0" }}>
-        <p style={{ fontFamily: "var(--font-cormorant), serif", fontSize: 24, lineHeight: 1.2 }}>
-          {data.greetingLabel}
-        </p>
-        <p className="q-italic" style={{ fontSize: 34, marginTop: 2 }}>
-          {data.greetingName},
-        </p>
-
-        <p style={{ fontSize: 12.5, lineHeight: 1.75, marginTop: 18, maxWidth: 520, color: "var(--ink)" }}>
-          {data.planIntro}
-        </p>
-
-        {/* THE TEAM */}
-        <div style={{ textAlign: "center", marginTop: 38, marginBottom: 22 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 14, justifyContent: "center" }}>
+      <div style={{ padding: continued ? "2px 18px 0" : "14px 18px 0" }}>
+        {continued ? (
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 14,
+              justifyContent: "center",
+              marginBottom: 18,
+            }}
+          >
             <span style={{ height: 1, background: "var(--line)", width: 70 }} />
             <span
               className="qserif"
@@ -50,22 +62,52 @@ export function PlanPage({ data, number }: { data: QuotationData; number: number
             >
               THE TEAM
             </span>
+            <span className="q-smallcaps" style={{ fontSize: 9 }}>
+              — Continued
+            </span>
             <span style={{ height: 1, background: "var(--line)", width: 70 }} />
           </div>
-          <div className="q-smallcaps" style={{ marginTop: 8, fontSize: 8.5 }}>
-            {data.teamSubline}
-          </div>
-        </div>
+        ) : (
+          <>
+            <p style={{ fontFamily: "var(--font-cormorant), serif", fontSize: 24, lineHeight: 1.2 }}>
+              {data.greetingLabel}
+            </p>
+            <p className="q-italic" style={{ fontSize: 34, marginTop: 2 }}>
+              {data.greetingName},
+            </p>
+
+            <p style={{ fontSize: 12.5, lineHeight: 1.75, marginTop: 18, maxWidth: 520, color: "var(--ink)" }}>
+              {data.planIntro}
+            </p>
+
+            {/* THE TEAM */}
+            <div style={{ textAlign: "center", marginTop: 38, marginBottom: 22 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 14, justifyContent: "center" }}>
+                <span style={{ height: 1, background: "var(--line)", width: 70 }} />
+                <span
+                  className="qserif"
+                  style={{ fontSize: 19, letterSpacing: 7, fontWeight: 500, color: "var(--ink)" }}
+                >
+                  THE TEAM
+                </span>
+                <span style={{ height: 1, background: "var(--line)", width: 70 }} />
+              </div>
+              <div className="q-smallcaps" style={{ marginTop: 8, fontSize: 8.5 }}>
+                {data.teamSubline}
+              </div>
+            </div>
+          </>
+        )}
 
         {/* Event schedule table */}
-        <table className="qtable" style={{ tableLayout: "fixed" }}>
+        <table className={tableClass} style={{ tableLayout: "fixed" }}>
           <colgroup>
             <col style={{ width: "42%" }} />
             <col style={{ width: "18%" }} />
             <col style={{ width: "40%" }} />
           </colgroup>
           <tbody>
-            {data.events.map((ev, i) => (
+            {events.map((ev, i) => (
               <tr key={ev.id} className={i % 2 === 1 ? "qrow-alt" : ""}>
                 <td style={{ borderLeft: "none" }}>
                   <span style={{ display: "flex", alignItems: "center", gap: 10 }}>

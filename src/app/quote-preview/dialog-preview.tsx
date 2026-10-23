@@ -11,7 +11,6 @@ export function DialogPreview() {
         clientPhone: "8522888119",
         eventType: "wedding",
         eventName: "Wedding",
-        market: "IN",
         estimateData: "",
         quotationData: "",
       }}

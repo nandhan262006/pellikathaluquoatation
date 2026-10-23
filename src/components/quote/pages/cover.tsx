@@ -11,7 +11,8 @@ export function CoverPage({ data, number }: CoverProps) {
     <QuotePage number={number} label="Quotation" footer={<></>} bare watermark={false}>
       {/* Full-page arch + bottom lotus (floral-free variant) */}
       <Image
-        src="/borderfirst.webp"
+          unoptimized
+        src="/quote-art/borderfirst.png"
         alt=""
         width={1024}
         height={1536}

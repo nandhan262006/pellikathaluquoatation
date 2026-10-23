@@ -28,10 +28,11 @@ export function PlanPage({
       art={
         /* Festive drums in the bottom-right corner */
         <Image
-          src="/drums.webp"
+          unoptimized
+          src="/quote-art/drums.png"
           alt=""
-          width={761}
-          height={800}
+          width={400}
+          height={420}
           style={{
             position: "absolute",
             right: 26,

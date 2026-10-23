@@ -38,6 +38,11 @@ function EstimatorShell() {
   const savedDataRef = useRef<string | null>(null);
 
   useEffect(() => {
+    // A reset clears eventTypeId — clear the dedupe marker with it so a
+    // re-completed identical estimate is saved again as a fresh lead.
+    if (!state.eventTypeId) {
+      savedDataRef.current = null;
+    }
     if (state.step < 7 || !state.clientName || !state.clientPhone || !state.eventTypeId) {
       return;
     }
@@ -48,7 +53,6 @@ function EstimatorShell() {
       state.clientName,
       state.clientPhone,
       state.eventTypeId,
-      state.market,
       template?.id ?? null,
       state.selectedSubEvents,
       state.subEventConfig,
@@ -63,18 +67,31 @@ function EstimatorShell() {
       clientPhone: state.clientPhone,
       eventType: state.eventTypeId,
       eventName: template?.name ?? "",
-      market: state.market,
       estimateData: estimateJSON,
-    }).catch(() => {
-      console.warn("Failed to auto-save estimate lead");
-      savedDataRef.current = null;
-    });
+    })
+      .then((res) => {
+        if (!res?.success) {
+          // Server rejected the lead (validation/DB) — reset the dedupe
+          // marker so the save is retried if the user fixes the data.
+          savedDataRef.current = null;
+          console.warn("Failed to auto-save estimate lead");
+        }
+      })
+      .catch(() => {
+        console.warn("Failed to auto-save estimate lead");
+        savedDataRef.current = null;
+      });
   }, [state, state.step, estimate, deliverables, template]);
 
   const canProceed = (() => {
     switch (state.step) {
       case 0:
-        return state.clientName.trim().length > 0 && state.clientPhone.trim().length > 0;
+        // The server requires exactly 10 digits — gate here so the lead is
+        // never silently lost after the client passes through the flow.
+        return (
+          state.clientName.trim().length > 0 &&
+          state.clientPhone.replace(/\D/g, "").length === 10
+        );
       case 1:
         return !!state.eventTypeId;
       case 2:
@@ -121,7 +138,7 @@ function EstimatorShell() {
         </div>
       </header>
 
-      <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-2 overflow-y-auto">
+      <main className="mx-auto w-full max-w-6xl min-h-0 flex-1 px-4 py-2 overflow-y-auto">
         <div className="grid gap-6 lg:grid-cols-[1fr_22rem] lg:gap-8">
           <div className="min-w-0 overflow-hidden">
             <StepNav />

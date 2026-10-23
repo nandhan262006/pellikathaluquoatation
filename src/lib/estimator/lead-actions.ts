@@ -4,7 +4,6 @@ import { revalidatePath } from "next/cache";
 import { requireAdmin, getDb } from "@/lib/db-utils";
 import { estimateLead } from "@/lib/db/schema";
 import { eq, desc } from "drizzle-orm";
-import type { Market } from "./types";
 
 const MAX_ESTIMATE_DATA_LENGTH = 64_000;
 
@@ -17,7 +16,6 @@ export async function saveEstimateLead(data: {
   clientPhone: string;
   eventType: string;
   eventName: string;
-  market: Market;
   estimateData: string;
 }) {
   const db = getDb();
@@ -26,7 +24,6 @@ export async function saveEstimateLead(data: {
   const clientPhone = cleanString(data.clientPhone, 15).replace(/\D/g, "").slice(0, 10);
   const eventType = cleanString(data.eventType, 40);
   const eventName = cleanString(data.eventName, 80);
-  const market: Market = data.market === "US" ? "US" : "IN";
   const estimateData =
     typeof data.estimateData === "string" && data.estimateData.length <= MAX_ESTIMATE_DATA_LENGTH
       ? data.estimateData
@@ -42,7 +39,6 @@ export async function saveEstimateLead(data: {
       clientPhone,
       eventType,
       eventName,
-      market,
       estimateData,
     });
     return { success: true };
@@ -52,14 +48,13 @@ export async function saveEstimateLead(data: {
   }
 }
 
-export async function getEstimateLeads(market: Market = "IN") {
+export async function getEstimateLeads() {
   await requireAdmin();
   const db = getDb();
   try {
     return await db
       .select()
       .from(estimateLead)
-      .where(eq(estimateLead.market, market))
       .orderBy(desc(estimateLead.createdAt));
   } catch (e) {
     console.error("Failed to fetch estimate leads:", e);

@@ -10,7 +10,6 @@ export function EventTypeStep() {
   const { templates, state, dispatch } = useEstimator();
   const [expanded, setExpanded] = useState<string | null>(null);
   const selectedId = state.eventTypeId;
-  const marketTemplates = templates.filter((t) => t.market === state.market);
 
   const select = (id: string) => {
     const template = templates.find((t) => t.id === id);
@@ -36,7 +35,7 @@ export function EventTypeStep() {
       </header>
 
       <div className="flex flex-wrap gap-2">
-        {marketTemplates.map((t) => {
+        {templates.map((t) => {
           const isExpanded = expanded === t.id;
           const isSelected = selectedId === t.id;
           return (

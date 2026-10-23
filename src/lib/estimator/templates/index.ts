@@ -20,16 +20,6 @@ import {
   anniversaryTemplate,
   corporateTemplate,
 } from "./other-events";
-import {
-  usWeddingTemplate,
-  usEngagementTemplate,
-  usBirthdayTemplate,
-  usAnniversaryTemplate,
-  usCorporateTemplate,
-  usBabyShowerTemplate,
-  usGraduationTemplate,
-  US_ALBUM_DEFAULTS,
-} from "./us-events";
 
 const HARDCODED_TEMPLATES: EventTemplate[] = [
   weddingTemplate,
@@ -39,13 +29,6 @@ const HARDCODED_TEMPLATES: EventTemplate[] = [
   housewarmingTemplate,
   anniversaryTemplate,
   corporateTemplate,
-  usWeddingTemplate,
-  usEngagementTemplate,
-  usBirthdayTemplate,
-  usAnniversaryTemplate,
-  usCorporateTemplate,
-  usBabyShowerTemplate,
-  usGraduationTemplate,
 ];
 
 async function loadOptionCatalog(): Promise<Record<ID, OptionDefinition>> {
@@ -103,22 +86,26 @@ async function loadDbTemplates(
         ...overrideAddOns,
       };
 
-      const nonZeroCoverage = Object.keys(mergedCoverage).filter(
-        (id) => mergedCoverage[id].value !== 0,
-      );
-      const nonZeroAddOns = Object.keys(mergedAddOns).filter(
-        (id) => mergedAddOns[id].value !== 0,
-      );
+      // An option may only be offered when it has a defined, non-zero price —
+      // otherwise it would render as a selectable item silently priced ₹0.
+      const hasPrice = (map: Record<ID, PriceRange>) => (id: ID) => {
+        const p = map[id]?.value;
+        return typeof p === "number" && Number.isFinite(p) && p > 0;
+      };
+      const coveragePriced = hasPrice(mergedCoverage);
+      const addOnPriced = hasPrice(mergedAddOns);
+
+      const nonZeroCoverage = Object.keys(mergedCoverage).filter(coveragePriced);
+      const nonZeroAddOns = Object.keys(mergedAddOns).filter(addOnPriced);
 
       const coverageOptions = rawCoverage.length > 0
-        ? rawCoverage.filter((id) => mergedCoverage[id]?.value !== 0)
+        ? rawCoverage.filter(coveragePriced)
         : nonZeroCoverage;
       const addOnOptions = rawAddOns.length > 0
-        ? rawAddOns.filter((id) => mergedAddOns[id]?.value !== 0)
+        ? rawAddOns.filter(addOnPriced)
         : nonZeroAddOns;
 
       const templateSubEvents = allSubEvents.filter((se) => se.templateId === t.id);
-
       const subEventDefs = templateSubEvents.map((se) => {
         const overrides: Record<string, unknown> = safeJson<Record<string, unknown>>(se.priceOverrides) ?? {};
         return {
@@ -144,7 +131,6 @@ async function loadDbTemplates(
         tagline: t.tagline || undefined,
         description: t.description || undefined,
         icon: t.icon,
-        market: t.market === "US" ? "US" : "IN",
         coverageOptions,
         addOnOptions,
         optionCatalog: catalog,
@@ -153,7 +139,7 @@ async function loadDbTemplates(
         defaultReelPrice: { value: t.defaultReelPrice },
         defaultMaxReels: t.defaultMaxReels,
         subEvents: subEventDefs,
-        album: t.market === "US" ? US_ALBUM_DEFAULTS : ALBUM_DEFAULTS,
+        album: ALBUM_DEFAULTS,
         deliverableRules: templateDeliverableRules,
         recommendationRules: commonRecommendations(),
       };
@@ -168,12 +154,12 @@ function safeJson<T>(val: string): T | null {
 }
 
 function applyZeroPriceFilter(t: EventTemplate): EventTemplate {
-  const filteredCoverage = t.coverageOptions.filter(
-    (id) => t.defaultCoveragePrices[id]?.value !== 0
-  );
-  const filteredAddOns = t.addOnOptions.filter(
-    (id) => t.defaultAddOnPrices[id]?.value !== 0
-  );
+  const priced = (map: EventTemplate["defaultCoveragePrices"]) => (id: ID) => {
+    const p = map[id]?.value;
+    return typeof p === "number" && Number.isFinite(p) && p > 0;
+  };
+  const filteredCoverage = t.coverageOptions.filter(priced(t.defaultCoveragePrices));
+  const filteredAddOns = t.addOnOptions.filter(priced(t.defaultAddOnPrices));
 
   return {
     ...t,

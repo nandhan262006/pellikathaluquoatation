@@ -3,11 +3,10 @@
 import { User, Phone } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { useEstimator } from "@/lib/estimator/state-provider";
-import { COUNTRY_CODES } from "@/lib/estimator/format";
+import { COUNTRY_CODE } from "@/lib/estimator/format";
 
 export function ClientInfoStep() {
   const { state, dispatch } = useEstimator();
-  const countryCode = COUNTRY_CODES[state.market];
 
   return (
     <section className="flex flex-col gap-4">
@@ -50,7 +49,7 @@ export function ClientInfoStep() {
           </label>
           <div className="flex items-stretch overflow-hidden rounded-lg border border-input bg-background focus-within:ring-1 focus-within:ring-primary">
             <span className="flex items-center border-r bg-muted/50 px-3 text-sm tabular-nums text-muted-foreground">
-              {countryCode}
+              {COUNTRY_CODE}
             </span>
             <Input
               id="clientPhone"

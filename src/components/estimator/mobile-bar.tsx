@@ -7,7 +7,7 @@ import { useEstimator } from "@/lib/estimator/state-provider";
 import { EstimatePanel } from "./estimate-panel";
 
 export function MobileEstimateBar() {
-  const { estimate, template, state } = useEstimator();
+  const { estimate, template } = useEstimator();
   const [open, setOpen] = useState(false);
   const [closing, setClosing] = useState(false);
 
@@ -37,7 +37,7 @@ export function MobileEstimateBar() {
           </div>
           {total !== null ? (
             <span className="text-xs font-semibold tabular-nums leading-tight">
-              {formatMoney(total, state.market)}
+              {formatMoney(total)}
             </span>
           ) : (
             <span className="text-xs text-muted-foreground leading-tight">—</span>
@@ -90,7 +90,7 @@ export function MobileEstimateBar() {
               <div className="flex items-center justify-between">
                 <span className="text-sm text-muted-foreground">Estimated Total</span>
                 <span className="text-lg font-semibold tabular-nums">
-                  {formatMoney(total, state.market)}
+                  {formatMoney(total)}
                 </span>
               </div>
             </div>

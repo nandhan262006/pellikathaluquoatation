@@ -13,10 +13,11 @@ export function ContactPage({ data, number }: { data: QuotationData; number: num
         <>
           {/* Top gold arch */}
           <Image
-            src="/borderlastpage.webp"
+          unoptimized
+            src="/quote-art/borderlastpage.png"
             alt=""
-            width={1536}
-            height={1024}
+            width={1120}
+            height={747}
             style={{
               position: "absolute",
               top: 26,
@@ -30,10 +31,11 @@ export function ContactPage({ data, number }: { data: QuotationData; number: num
           />
           {/* Festive elephant walking in from the bottom-left */}
           <Image
-            src="/ELEPHANT.webp"
+          unoptimized
+            src="/quote-art/elephant.png"
             alt=""
-            width={1417}
-            height={1123}
+            width={520}
+            height={410}
             style={{
               position: "absolute",
               left: 26,

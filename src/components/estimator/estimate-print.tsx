@@ -3,7 +3,7 @@
 import { useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
 import { useEstimator } from "@/lib/estimator/state-provider";
-import { formatMoneyPlain, COUNTRY_CODES } from "@/lib/estimator/format";
+import { formatMoneyPlain, COUNTRY_CODE } from "@/lib/estimator/format";
 
 const noopSubscribe = () => () => {};
 /** False on the server & hydration render, true afterwards — safe portal gate. */
@@ -77,7 +77,7 @@ export function EstimatePrint() {
         <div className="mb-0.5 flex">
           <span className="w-[110px] text-[#6b7280]">Phone</span>
           <span>
-            {COUNTRY_CODES[state.market]} {state.clientPhone}
+            {COUNTRY_CODE} {state.clientPhone}
           </span>
         </div>
         {estimatedDateDisplay && (
@@ -118,7 +118,7 @@ export function EstimatePrint() {
                   <div key={item.id} className="avoid-break mb-1 flex items-start justify-between pr-1">
                     <span className="flex-1 pr-3">{item.label}</span>
                     <span className="text-right font-bold">
-                      {formatMoneyPlain(item.value, state.market)}
+                      {formatMoneyPlain(item.value)}
                     </span>
                   </div>
                 ))}
@@ -134,7 +134,7 @@ export function EstimatePrint() {
         >
           <div className="text-[9px] text-[#9ca3af]">ESTIMATED TOTAL (APPROXIMATE)</div>
           <div className="mt-1 text-[20px] font-bold text-white">
-            {formatMoneyPlain(estimate.total, state.market)}
+            {formatMoneyPlain(estimate.total)}
           </div>
         </div>
 

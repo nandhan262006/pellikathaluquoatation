@@ -114,7 +114,7 @@ export function AddOnStep() {
                           description={opt.description}
                           selected={cfg.addOns.includes(id)}
                           priceLabel={
-                            price ? formatMoney(price.value, state.market) : undefined
+                            price ? formatMoney(price.value) : undefined
                           }
                           onClick={() =>
                             dispatch({

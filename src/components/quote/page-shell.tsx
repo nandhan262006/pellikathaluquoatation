@@ -9,10 +9,11 @@ import Image from "next/image";
 function KnotWatermark() {
   return (
     <Image
-      src="/knot-watermark.webp"
+          unoptimized
+      src="/quote-art/knot-watermark.png"
       alt=""
-      width={700}
-      height={700}
+      width={1588}
+      height={529}
       aria-hidden
       className="q-watermark"
     />
@@ -23,10 +24,11 @@ function KnotWatermark() {
 export function Kalash({ height = 26 }: { height?: number }) {
   return (
     <Image
-      src="/kalash.webp"
+          unoptimized
+      src="/quote-art/kalash.png"
       alt=""
-      width={594}
-      height={600}
+      width={60}
+      height={61}
       aria-hidden
       style={{ height, width: "auto", display: "inline-block", color: "var(--gold)" }}
     />

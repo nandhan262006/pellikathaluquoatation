@@ -29,21 +29,6 @@ function threeDigits(n: number): string {
   return parts.join(" ");
 }
 
-/** US/USD amounts use international words (e.g. "FIVE THOUSAND ONLY"). */
-export function usdWords(n: number): string {
-  if (n === 0) return "ZERO";
-  const billion = Math.floor(n / 1_000_000_000);
-  const million = Math.floor((n % 1_000_000_000) / 1_000_000);
-  const thousand = Math.floor((n % 1_000_000) / 1000);
-  const rest = n % 1000;
-  const parts: string[] = [];
-  if (billion) parts.push(`${threeDigits(billion)} BILLION`);
-  if (million) parts.push(`${threeDigits(million)} MILLION`);
-  if (thousand) parts.push(`${threeDigits(thousand)} THOUSAND`);
-  if (rest) parts.push(threeDigits(rest));
-  return parts.join(" ");
-}
-
 /** INR amounts use the lakh/crore system (e.g. 5,25,000 -> FIVE LAKHS ...). */
 export function inrWords(n: number): string {
   if (n === 0) return "ZERO";
@@ -59,7 +44,8 @@ export function inrWords(n: number): string {
   return parts.join(" ");
 }
 
-export function amountWords(amount: number, market: "IN" | "US"): string {
-  const n = Math.round(amount);
-  return `${market === "US" ? usdWords(n) : inrWords(n)} ONLY`;
+export function amountWords(amount: number): string {
+  if (!Number.isFinite(amount)) return "";
+  const n = Math.max(0, Math.round(amount));
+  return `${inrWords(n)} ONLY`;
 }

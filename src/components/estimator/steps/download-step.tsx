@@ -8,7 +8,7 @@ import { EstimatePrint } from "@/components/estimator/estimate-print";
 import { useEstimator } from "@/lib/estimator/state-provider";
 
 export function DownloadStep() {
-  const { state, estimate, deliverableTexts, dispatch } = useEstimator();
+  const { estimate, deliverableTexts, dispatch } = useEstimator();
 
   const handlePrint = () => {
     if (estimate.isEmpty) return;
@@ -57,7 +57,7 @@ export function DownloadStep() {
               Estimated total
             </span>
             <div className="mt-1 font-heading text-2xl font-semibold tabular-nums sm:text-3xl">
-              {formatMoney(estimate.total, state.market)}
+              {formatMoney(estimate.total)}
             </div>
             {estimate.subEventCount > 0 && (
               <span className="mt-2 inline-block text-sm text-muted-foreground">
@@ -92,7 +92,7 @@ export function DownloadStep() {
                                 >
                                   <span className="font-medium">{item.label}</span>
                                   <span className="shrink-0 tabular-nums text-muted-foreground">
-                                    {formatMoney(item.value, state.market)}
+                                    {formatMoney(item.value)}
                                   </span>
                                 </div>
                               ))}

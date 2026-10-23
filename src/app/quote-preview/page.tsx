@@ -27,13 +27,11 @@ export default async function QuotePreviewPage({
     clientPhone: "8522888119",
     eventType: "wedding",
     eventName: "Wedding",
-    market: "IN",
     estimateData: JSON.stringify({
       state: {
         clientName: "Kavya",
         clientPhone: "8522888119",
         estimatedDate: "2026-11-01",
-        market: "IN",
         eventTypeId: "wedding",
         selectedSubEvents: [],
         subEventConfig: {},
@@ -142,5 +140,9 @@ export default async function QuotePreviewPage({
     return <DialogPreview />;
   }
 
-  return <QuotationDocument data={data} />;
+  return (
+    <div className="h-full overflow-y-auto bg-[#23201b] p-4 print:h-auto print:overflow-visible">
+      <QuotationDocument data={data} />
+    </div>
+  );
 }

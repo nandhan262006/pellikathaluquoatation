@@ -79,16 +79,26 @@ export function calculateEstimate(
   if (albumState.required && albumState.sizeId) {
     const size = template.album.sizes.find((s) => s.id === albumState.sizeId);
     if (size) {
-      const perAlbum = albumState.pages * size.multiplier * template.album.pageRate;
-      const albumTotal = perAlbum * albumState.count;
-      items.push({
-        id: "album",
-        group: "Albums",
-        label: `${albumState.count} ${size.name} album${albumState.count > 1 ? "s" : ""} (${albumState.pages} pages each)`,
-        detail: "Album",
-        value: albumTotal,
-      });
-      total += albumTotal;
+      // Price from the album type's own base + per-page rate, scaled by size.
+      // Falls back to the first defined type when none is selected.
+      const type =
+        template.album.types.find((t) => t.id === albumState.typeId) ??
+        template.album.types[0];
+      if (type) {
+        const extraPages = Math.max(0, albumState.pages - template.album.basePages);
+        const perAlbum =
+          (type.basePrice.value + extraPages * type.perPagePrice.value) *
+          size.multiplier;
+        const albumTotal = perAlbum * albumState.count;
+        items.push({
+          id: "album",
+          group: "Albums",
+          label: `${albumState.count} ${type.name}${albumState.count > 1 ? "s" : ""} (${size.name}, ${albumState.pages} pages each)`,
+          detail: "Album",
+          value: albumTotal,
+        });
+        total += albumTotal;
+      }
     }
   }
 

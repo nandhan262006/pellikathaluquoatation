@@ -34,10 +34,11 @@ export function DeliverablesPage({
       art={
         /* Shehnai players in the bottom-right corner */
         <Image
-          src="/sanai.webp"
+          unoptimized
+          src="/quote-art/sanai.png"
           alt=""
-          width={1024}
-          height={1536}
+          width={400}
+          height={600}
           style={{
             position: "absolute",
             right: 20,

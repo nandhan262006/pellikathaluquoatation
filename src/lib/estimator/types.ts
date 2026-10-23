@@ -9,9 +9,6 @@
 
 export type ID = string;
 
-/** Target market. IN uses INR pricing, US uses USD pricing. */
-export type Market = "IN" | "US";
-
 export interface PriceRange {
   value: number;
 }
@@ -91,8 +88,6 @@ export interface AlbumDefaults {
   basePages: number;
   maxPages: number;
   maxAlbums: number;
-  /** Per-page base rate (in the market's currency) used to price albums. */
-  pageRate: number;
 }
 
 /**
@@ -151,8 +146,6 @@ export interface EventTemplate {
   tagline?: string;
   description?: string;
   icon: string;
-  /** Which market this template belongs to (IN or US). */
-  market: Market;
   /** Coverage option ids offered by this event (usually the global five). */
   coverageOptions: ID[];
   /** Add-on option ids offered by this event. */
@@ -197,8 +190,6 @@ export interface EstimatorState {
   clientName: string;
   clientPhone: string;
   estimatedDate: string;
-  /** Client's chosen market (IN or US). Determines events, prices and phone code. */
-  market: Market;
   eventTypeId: ID | null;
   /** Selected sub-event ids, order preserved. */
   selectedSubEvents: ID[];

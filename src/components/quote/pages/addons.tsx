@@ -27,10 +27,11 @@ export function AddonsPage({
       art={
         /* Saptapadi artwork anchored in the bottom-right of every add-on page */
         <Image
-          src="/7steps.webp"
+          unoptimized
+          src="/quote-art/7steps.png"
           alt=""
-          width={731}
-          height={732}
+          width={400}
+          height={401}
           style={{
             position: "absolute",
             right: 24,

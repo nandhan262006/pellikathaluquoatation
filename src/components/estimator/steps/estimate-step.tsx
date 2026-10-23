@@ -10,7 +10,7 @@ import { formatMoney } from "@/lib/estimator/format";
 import { useEstimator } from "@/lib/estimator/state-provider";
 
 export function EstimateStep() {
-  const { estimate, deliverables, recommendations, dispatch, state } =
+  const { estimate, deliverables, recommendations, dispatch } =
     useEstimator();
 
   const { subEventOrder, subEventItems } = useMemo(() => {
@@ -53,7 +53,7 @@ export function EstimateStep() {
               Estimated total (approximate)
             </span>
             <div className="mt-1 font-heading text-2xl font-semibold tabular-nums sm:text-3xl">
-              {formatMoney(estimate.total, state.market)}
+              {formatMoney(estimate.total)}
             </div>
             {estimate.subEventCount > 0 && (
               <span className="mt-2 inline-block text-sm text-muted-foreground">
@@ -90,7 +90,7 @@ export function EstimateStep() {
                                 >
                                   <span className="font-medium">{item.label}</span>
                                   <span className="shrink-0 tabular-nums">
-                                    {formatMoney(item.value, state.market)}
+                                    {formatMoney(item.value)}
                                   </span>
                                 </div>
                               ))}

@@ -7,7 +7,6 @@ import type {
   EstimateBreakdown,
   EstimatorState,
   DeliverableGroup,
-  Market,
 } from "@/lib/estimator/types";
 import { formatMoney } from "@/lib/estimator/format";
 import { amountWords } from "./words";
@@ -162,11 +161,9 @@ export function buildQuotationData(lead: {
   clientPhone: string;
   eventType: string;
   eventName: string;
-  market: string;
   estimateData: string;
 }): QuotationData {
   const parsed = parseEstimateData(lead.estimateData) ?? {};
-  const market: Market = lead.market === "US" ? "US" : "IN";
   const estimate = parsed.estimate;
   const state = parsed.state;
   const total = estimate && !estimate.isEmpty ? estimate.total : 0;
@@ -223,7 +220,6 @@ export function buildQuotationData(lead: {
     quoteNumber: `PK-${new Date().getFullYear()}-${String(Date.now()).slice(-4)}`,
     clientName: lead.clientName,
     clientPhone: lead.clientPhone,
-    market,
     eventType: lead.eventName || lead.eventType,
     eventDate: dateLabel,
 
@@ -250,11 +246,11 @@ export function buildQuotationData(lead: {
       {
         id: "service",
         label: `${lead.eventName || "Photography"} Service`,
-        amount: formatMoney(total, market),
+        amount: formatMoney(total),
       },
     ],
-    total: formatMoney(total, market),
-    totalWords: amountWords(total, market),
+    total: formatMoney(total),
+    totalWords: amountWords(total),
     exclusionsNote:
       "This excludes travel, accommodation, food & any add-on services.",
 
@@ -274,10 +270,13 @@ export function buildQuotationData(lead: {
 }
 
 export function isQuotationData(value: unknown): value is QuotationData {
+  if (!value || typeof value !== "object") return false;
+  const v = value as Record<string, unknown>;
   return (
-    !!value &&
-    typeof value === "object" &&
-    Array.isArray((value as QuotationData).services) &&
-    Array.isArray((value as QuotationData).events)
+    Array.isArray(v.services) &&
+    Array.isArray(v.events) &&
+    Array.isArray(v.charges) &&
+    Array.isArray(v.timeline) &&
+    Array.isArray(v.terms)
   );
 }

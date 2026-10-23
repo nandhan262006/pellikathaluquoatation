@@ -3,7 +3,7 @@
  * and a server-side sanitizer used to validate untrusted client input before
  * the PDF is rendered. No React here so it is fully testable in isolation.
  */
-import type { EstimatorState, EventTemplate, ID, Market, SubEventState } from "./types";
+import type { EstimatorState, EventTemplate, ID, SubEventState } from "./types";
 
 export const STEPS = [
   "Your Details",
@@ -21,7 +21,6 @@ export const initialState: EstimatorState = {
   clientName: "",
   clientPhone: "",
   estimatedDate: "",
-  market: "IN",
   eventTypeId: null,
   selectedSubEvents: [],
   subEventConfig: {},
@@ -32,7 +31,6 @@ export const initialState: EstimatorState = {
 export type EstimatorAction =
   | { type: "SET_CLIENT_INFO"; field: "clientName" | "clientPhone"; value: string }
   | { type: "SET_ESTIMATED_DATE"; value: string }
-  | { type: "SET_MARKET"; market: Market }
   | {
       type: "SET_EVENT_TYPE";
       eventTypeId: ID;
@@ -85,24 +83,6 @@ export function estimatorReducer(
 
     case "SET_ESTIMATED_DATE": {
       return { ...state, estimatedDate: action.value };
-    }
-
-    case "SET_MARKET": {
-      if (state.market === action.market) return state;
-      return {
-        ...state,
-        market: action.market,
-        eventTypeId: null,
-        selectedSubEvents: [],
-        subEventConfig: {},
-        album: {
-          required: false,
-          typeId: null,
-          sizeId: null,
-          pages: initialState.album.pages,
-          count: 1,
-        },
-      };
     }
 
     case "SET_EVENT_TYPE": {
@@ -306,7 +286,6 @@ export function sanitizeState(
       typeof s.clientName === "string" ? s.clientName.trim().slice(0, 80) : "",
     clientPhone: typeof s.clientPhone === "string" ? s.clientPhone.replace(/\D/g, "").slice(0, 10) : "",
     estimatedDate: isValidDateString(s.estimatedDate) ? s.estimatedDate : "",
-    market: s.market === "US" ? "US" : "IN",
     eventTypeId: template.id,
     selectedSubEvents,
     subEventConfig,

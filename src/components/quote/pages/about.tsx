@@ -12,10 +12,11 @@ export function AboutPage({ data, number }: { data: QuotationData; number: numbe
         <>
           {/* Right-side gold arch */}
           <Image
-            src="/borderlastpage.webp"
+          unoptimized
+            src="/quote-art/borderlastpage.png"
             alt=""
-            width={1536}
-            height={1024}
+            width={1120}
+            height={747}
             style={{
               position: "absolute",
               right: -20,
@@ -30,10 +31,11 @@ export function AboutPage({ data, number }: { data: QuotationData; number: numbe
 
           {/* Heritage couple illustration under the arch */}
           <Image
-            src="/couple.webp"
+          unoptimized
+            src="/quote-art/couple.png"
             alt=""
-            width={941}
-            height={597}
+            width={720}
+            height={457}
             style={{
               position: "absolute",
               right: 40,

@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useSyncExternalStore } from "react";
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";import { Button } from "@/components/ui/button";
 import { QuotationDocument } from "@/components/quote/quotation-document";
 import { buildQuotationData, isQuotationData } from "@/lib/quote/prefill";
@@ -16,7 +16,6 @@ export interface QuotationLead {
   clientPhone: string;
   eventType: string;
   eventName: string;
-  market: string;
   estimateData: string;
   quotationData: string;
 }
@@ -44,7 +43,51 @@ export function QuotationDialog({ lead, onClose }: { lead: QuotationLead; onClos
   const [zoom, setZoom] = useState(0.65);
   const [saving, setSaving] = useState(false);
   const [dirty, setDirty] = useState(false);
+  const [printing, setPrinting] = useState(false);
   const mounted = useMounted();
+  const userInitiatedPrint = useRef(false);
+
+  // The print root renders a full second copy of the document — mounting it
+  // only while printing keeps dialog open fast (no double image decode).
+  useEffect(() => {
+    if (!printing) return;
+    let cancelled = false;
+    const root = document.querySelector(".quote-print-root");
+    const imgs = root ? Array.from(root.querySelectorAll("img")) : [];
+    const wait = (img: HTMLImageElement) =>
+      img.complete ? Promise.resolve() : new Promise<void>((res) => {
+        img.addEventListener("load", () => res(), { once: true });
+        img.addEventListener("error", () => res(), { once: true });
+      });
+    Promise.all(imgs.map(wait)).then(() => {
+      if (cancelled) return;
+      requestAnimationFrame(() => {
+        if (userInitiatedPrint.current) {
+          userInitiatedPrint.current = false;
+          window.print();
+          setPrinting(false);
+        }
+      });
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [printing]);
+
+  // Ctrl+P / Cmd+P inside the dialog still needs the print root mounted.
+  useEffect(() => {
+    const onBeforePrint = () => {
+      userInitiatedPrint.current = false;
+      setPrinting(true);
+    };
+    window.addEventListener("beforeprint", onBeforePrint);
+    return () => window.removeEventListener("beforeprint", onBeforePrint);
+  }, []);
+
+  const handlePrint = () => {
+    userInitiatedPrint.current = true;
+    setPrinting(true);
+  };
 
   const update = (next: QuotationData) => {
     setData(next);
@@ -84,7 +127,7 @@ export function QuotationDialog({ lead, onClose }: { lead: QuotationLead; onClos
             variant="outline"
             size="sm"
             className="border-[#4a453c] bg-transparent text-[#f3ecdd] hover:bg-[#3a362f] hover:text-[#f3ecdd]"
-            onClick={() => window.print()}
+            onClick={handlePrint}
           >
             <Printer className="size-4" /> Print / Save PDF
           </Button>

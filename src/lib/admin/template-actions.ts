@@ -4,16 +4,56 @@ import { revalidatePath } from "next/cache";
 import { requireAdmin, getDb } from "@/lib/db-utils";
 import { eventTemplate, subEvent, optionCatalog } from "@/lib/db/schema";
 import { eq, asc } from "drizzle-orm";
-import type { Market, OptionKind } from "@/lib/estimator/types";
+import type { OptionKind } from "@/lib/estimator/types";
 
-export async function getTemplates(market: Market = "IN") {
+const ID_PATTERN = /^[a-z0-9_]+$/;
+
+function cleanText(value: unknown, max: number, field: string, required = true): string {
+  const v = typeof value === "string" ? value.trim() : "";
+  if (!v) {
+    if (required) throw new Error(`${field} is required`);
+    return "";
+  }
+  return v.slice(0, max);
+}
+
+function cleanId(value: unknown, field: string): string {
+  const v = typeof value === "string" ? value.trim().toLowerCase() : "";
+  if (!v || !ID_PATTERN.test(v)) {
+    throw new Error(`${field} must be lowercase letters, digits and underscores`);
+  }
+  return v.slice(0, 40);
+}
+
+function cleanNumber(value: unknown, field: string, min = 0, max = 100_000_000): number {
+  const n = Number(value);
+  if (!Number.isFinite(n) || n < min || n > max) {
+    throw new Error(`${field} must be a number between ${min} and ${max}`);
+  }
+  return Math.trunc(n);
+}
+
+function cleanOptionIds(value: unknown): string[] {
+  if (!Array.isArray(value)) return [];
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const v of value) {
+    if (typeof v !== "string") continue;
+    const id = v.trim();
+    if (!id || seen.has(id)) continue;
+    seen.add(id);
+    out.push(id.slice(0, 60));
+  }
+  return out;
+}
+
+export async function getTemplates() {
   await requireAdmin();
   const db = getDb();
   try {
     const templates = await db
       .select()
       .from(eventTemplate)
-      .where(eq(eventTemplate.market, market))
       .orderBy(asc(eventTemplate.name));
     const subEvents = await db.select().from(subEvent).orderBy(asc(subEvent.sortOrder));
     return JSON.parse(JSON.stringify(
@@ -43,7 +83,6 @@ export async function upsertTemplate(data: {
   tagline: string;
   description: string;
   icon: string;
-  market: Market;
   isActive: number;
   defaultMaxReels: number;
   defaultReelPrice: number;
@@ -54,17 +93,16 @@ export async function upsertTemplate(data: {
   await requireAdmin();
   const db = getDb();
   const payload = {
-    typeId: data.typeId,
-    name: data.name,
-    tagline: data.tagline,
-    description: data.description,
-    icon: data.icon,
-    market: data.market,
+    typeId: cleanId(data.typeId, "ID"),
+    name: cleanText(data.name, 80, "Name"),
+    tagline: cleanText(data.tagline, 200, "Tagline", false),
+    description: cleanText(data.description, 500, "Description", false),
+    icon: cleanId(data.icon, "Icon"),
     isActive: data.isActive ? 1 : 0,
-    defaultMaxReels: data.defaultMaxReels,
-    defaultReelPrice: data.defaultReelPrice,
-    coverageOptions: JSON.stringify(data.coverageOptions),
-    addOnOptions: JSON.stringify(data.addOnOptions),
+    defaultMaxReels: cleanNumber(data.defaultMaxReels, "Max reels", 0, 20),
+    defaultReelPrice: cleanNumber(data.defaultReelPrice, "Reel price", 0, 10_000_000),
+    coverageOptions: JSON.stringify(cleanOptionIds(data.coverageOptions)),
+    addOnOptions: JSON.stringify(cleanOptionIds(data.addOnOptions)),
     defaultPrices: data.defaultPrices ?? "{}",
   };
   if (data.id) {
@@ -92,12 +130,12 @@ export async function upsertSubEvent(data: {
   await requireAdmin();
   const db = getDb();
   const payload = {
-    subEventId: data.subEventId,
-    name: data.name,
-    description: data.description,
+    subEventId: cleanId(data.subEventId, "ID"),
+    name: cleanText(data.name, 80, "Name"),
+    description: cleanText(data.description, 300, "Description", false),
     defaultSelected: data.defaultSelected ? 1 : 0,
-    maxReels: data.maxReels,
-    sortOrder: data.sortOrder,
+    maxReels: data.maxReels === null ? null : cleanNumber(data.maxReels, "Max reels", 0, 20),
+    sortOrder: cleanNumber(data.sortOrder, "Sort order", 0, 1000),
     templateId: data.templateId,
   };
   if (data.id) {
@@ -163,12 +201,15 @@ export async function createOption(data: {
 }) {
   await requireAdmin();
   const db = getDb();
+  if (data.kind !== "coverage" && data.kind !== "addon") {
+    throw new Error("Invalid option kind");
+  }
   await db.insert(optionCatalog).values({
-    optionId: data.optionId,
+    optionId: cleanId(data.optionId, "ID"),
     kind: data.kind,
-    label: data.label,
-    icon: data.icon,
-    description: data.description,
+    label: cleanText(data.label, 80, "Label"),
+    icon: cleanId(data.icon, "Icon"),
+    description: cleanText(data.description, 300, "Description", false),
     sortOrder: 99,
   });
   revalidatePath("/admin/templates");

@@ -140,7 +140,7 @@ export function AlbumStep() {
               <Images className="size-4 text-muted-foreground" />
               <span className="text-muted-foreground">Album estimate</span>
               <span className="ml-auto font-semibold tabular-nums">
-                {formatMoney(albumItem.value, state.market)}
+                {formatMoney(albumItem.value)}
               </span>
             </div>
           ) : (

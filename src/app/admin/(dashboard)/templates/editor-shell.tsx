@@ -15,7 +15,7 @@ import {
   createOption,
   deleteOption,
 } from "@/lib/admin/template-actions";
-import type { Market, OptionKind } from "@/lib/estimator/types";
+import type { OptionKind } from "@/lib/estimator/types";
 
 interface SubEvent {
   id: number;
@@ -36,7 +36,6 @@ interface Template {
   tagline: string;
   description: string;
   icon: string;
-  market: Market;
   isActive: number;
   defaultMaxReels: number;
   defaultReelPrice: number;
@@ -62,11 +61,9 @@ type Tab = "events" | "subevents" | "reels" | "prices" | "options";
 
 export function EditorShell({
   templates,
-  market,
   options,
 }: {
   templates: Template[];
-  market: Market;
   options: CatalogOption[];
 }) {
   const [tab, setTab] = useState<Tab>("events");
@@ -97,7 +94,7 @@ export function EditorShell({
       </div>
 
       {tab === "events" && (
-        <EventsEditor templates={templates} market={market} coverageOptions={coverageOptions} addOnOptions={addOnOptions} />
+        <EventsEditor templates={templates} coverageOptions={coverageOptions} addOnOptions={addOnOptions} />
       )}
       {tab === "subevents" && (
         <SubEventsEditor
@@ -119,12 +116,10 @@ const NEW_ID = -1;
 
 function EventsEditor({
   templates,
-  market,
   coverageOptions,
   addOnOptions,
 }: {
   templates: Template[];
-  market: Market;
   coverageOptions: CatalogOption[];
   addOnOptions: CatalogOption[];
 }) {
@@ -134,7 +129,7 @@ function EventsEditor({
   const [form, setForm] = useState({
     typeId: "", name: "", tagline: "", description: "",
     icon: "heart", isActive: 1 as number,
-    defaultMaxReels: 3, defaultReelPrice: market === "US" ? 75 : 6000,
+    defaultMaxReels: 3, defaultReelPrice: 6000,
     coverageOptions: [] as string[],
     addOnOptions: [] as string[],
   });
@@ -151,7 +146,7 @@ function EventsEditor({
       });
       setEditing(t.id);
     } else {
-      setForm({ typeId: "", name: "", tagline: "", description: "", icon: "heart", isActive: 1, defaultMaxReels: 3, defaultReelPrice: market === "US" ? 75 : 6000, coverageOptions: [], addOnOptions: [] });
+      setForm({ typeId: "", name: "", tagline: "", description: "", icon: "heart", isActive: 1, defaultMaxReels: 3, defaultReelPrice: 6000, coverageOptions: [], addOnOptions: [] });
       setEditing(NEW_ID);
     }
   };
@@ -162,7 +157,7 @@ function EventsEditor({
     try {
       const templateId = editing === NEW_ID ? undefined : editing ?? undefined;
       const existing = typeof templateId === "number" ? templates.find((t) => t.id === templateId) : null;
-      await upsertTemplate({ ...form, id: templateId, market: existing?.market ?? market, defaultPrices: existing?.defaultPrices });
+      await upsertTemplate({ ...form, id: templateId, defaultPrices: existing?.defaultPrices });
       toast.success("Saved");
       setEditing(null);
       router.refresh();
@@ -439,7 +434,7 @@ function ReelsEditor({ templates }: { templates: Template[] }) {
       await upsertTemplate({
         id: editing,
         typeId: t.typeId, name: t.name, tagline: t.tagline,
-        description: t.description, icon: t.icon, market: t.market, isActive: t.isActive,
+        description: t.description, icon: t.icon, isActive: t.isActive,
         defaultMaxReels: maxReels,
         defaultReelPrice: t.defaultReelPrice,
         coverageOptions: safeParse(t.coverageOptions) ?? [], addOnOptions: safeParse(t.addOnOptions) ?? [],
@@ -531,7 +526,7 @@ function PricesEditor({
       await upsertTemplate({
         id: selectedTemplate,
         typeId: tmpl.typeId, name: tmpl.name, tagline: tmpl.tagline,
-        description: tmpl.description, icon: tmpl.icon, market: tmpl.market, isActive: tmpl.isActive,
+        description: tmpl.description, icon: tmpl.icon, isActive: tmpl.isActive,
         defaultMaxReels: tmpl.defaultMaxReels,
         defaultReelPrice: reelPrice ? Number(reelPrice) : tmpl.defaultReelPrice,
         coverageOptions: safeParse(tmpl.coverageOptions) ?? [],

@@ -3,8 +3,6 @@
  * Pure serializable data — kept separate from presentation.
  */
 
-export type Market = "IN" | "US";
-
 /** A single add-on service row on Page 05. */
 export interface QuoteService {
   id: string;
@@ -61,7 +59,6 @@ export interface QuotationData {
   quoteNumber: string;
   clientName: string;
   clientPhone: string;
-  market: Market;
   eventType: string;
   eventDate: string;
 

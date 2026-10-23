@@ -30,10 +30,11 @@ export function TimelinePage({
       art={
         /* Wedding scene illustration along the bottom-right of the page */
         <Image
-          src="/lastpage.webp"
+          unoptimized
+          src="/quote-art/lastpage.png"
           alt=""
-          width={1536}
-          height={1024}
+          width={680}
+          height={453}
           style={{
             position: "absolute",
             right: 0,

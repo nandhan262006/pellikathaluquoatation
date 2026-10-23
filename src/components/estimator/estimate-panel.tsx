@@ -6,7 +6,7 @@ import { formatMoney } from "@/lib/estimator/format";
 import { useEstimator } from "@/lib/estimator/state-provider";
 
 export function EstimatePanel({ compact = false }: { compact?: boolean }) {
-  const { estimate, recommendations, deliverables, dispatch, state } = useEstimator();
+  const { estimate, recommendations, deliverables, dispatch } = useEstimator();
 
   return (
     <div className="flex flex-col gap-4">
@@ -46,7 +46,7 @@ export function EstimatePanel({ compact = false }: { compact?: boolean }) {
               Estimated total (approx.)
             </span>
             <span className="font-heading text-xl font-semibold tabular-nums sm:text-2xl">
-              {formatMoney(estimate.total, state.market)}
+              {formatMoney(estimate.total)}
             </span>
           </div>
         )}

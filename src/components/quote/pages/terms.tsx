@@ -20,10 +20,11 @@ export function TermsPage({
       art={
         /* Couple illustration in the bottom-right corner */
         <Image
-          src="/7THPAGE.webp"
+          unoptimized
+          src="/quote-art/7thpage.png"
           alt=""
-          width={1536}
-          height={1024}
+          width={640}
+          height={427}
           style={{
             position: "absolute",
             right: 0,

@@ -240,13 +240,10 @@ html, body {
   bottom: 0;
 }
 /* ==========================================================================
-   ESTIMATOR PRINT FLOW (Save as PDF via browser)
-   The .estimate-print-root document is portaled to <body>; on screen it is
-   hidden, and in print only it is shown.
+   QUOTATION PDF RENDER (server-side headless Chromium)
+   The /pdf/quotation/[id] page renders .quote-print-root; on screen it is
+   hidden, and in print media only it is shown. Consumed by /api/quote-pdf.
    ========================================================================== */
-.estimate-print-root {
-  display: none;
-}
 
 @media print {
   @page {
@@ -261,12 +258,8 @@ html, body {
     background: #ffffff !important;
   }
 
-  body > *:not(.estimate-print-root):not(.quote-print-root) {
+  body > *:not(:has(.quote-print-root)) {
     display: none !important;
-  }
-
-  .estimate-print-root {
-    display: block !important;
   }
 
   .avoid-break {

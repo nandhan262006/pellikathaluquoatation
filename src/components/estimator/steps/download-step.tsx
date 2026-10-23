@@ -1,18 +1,40 @@
 "use client";
 
-import { RotateCcw, Check, Printer } from "lucide-react";
+import { useState } from "react";
+import { RotateCcw, Check, Download, Loader2 } from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { formatMoney } from "@/lib/estimator/format";
-import { EstimatePrint } from "@/components/estimator/estimate-print";
+import { buildEstimatePdfBlob } from "@/lib/estimator/estimate-pdf";
 import { useEstimator } from "@/lib/estimator/state-provider";
 
 export function DownloadStep() {
-  const { estimate, deliverableTexts, dispatch } = useEstimator();
+  const { state, estimate, deliverableTexts, dispatch, template } =
+    useEstimator();
+  const [downloading, setDownloading] = useState(false);
 
-  const handlePrint = () => {
-    if (estimate.isEmpty) return;
-    window.print();
+  const handleDownload = async () => {
+    if (estimate.isEmpty || !template || downloading) return;
+    setDownloading(true);
+    try {
+      const blob = await buildEstimatePdfBlob({
+        state,
+        estimate,
+        template,
+        deliverableTexts,
+      });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `Pellikathalu-Estimate-${state.clientName || "Client"}.pdf`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch {
+      toast.error("Failed to generate the PDF. Please try again.");
+    } finally {
+      setDownloading(false);
+    }
   };
 
   const subEventItems = new Map<string, Map<string, typeof estimate.items>>();
@@ -33,13 +55,12 @@ export function DownloadStep() {
 
   return (
     <section className="flex flex-col gap-6">
-      <EstimatePrint />
       <header className="flex flex-col gap-1">
         <h1 className="font-heading text-2xl font-semibold">
           Download your estimate
         </h1>
         <p className="text-sm text-muted-foreground">
-          Review the summary below, then print it or save it as a PDF with your
+          Review the summary below, then download it as a PDF with your
           selections, deliverables, and estimated price.
         </p>
       </header>
@@ -142,9 +163,13 @@ export function DownloadStep() {
       </div>
 
       <div className="flex flex-wrap items-center gap-3">
-        <Button onClick={handlePrint} disabled={estimate.isEmpty} size="lg">
-          <Printer />
-          Print / Save as PDF
+        <Button
+          onClick={handleDownload}
+          disabled={estimate.isEmpty || downloading}
+          size="lg"
+        >
+          {downloading ? <Loader2 className="animate-spin" /> : <Download />}
+          {downloading ? "Preparing PDF…" : "Download PDF"}
         </Button>
         <Button
           variant="outline"

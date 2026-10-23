@@ -1,13 +1,13 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
-import { createPortal } from "react-dom";import { Button } from "@/components/ui/button";
+import { useMemo, useState } from "react";
+import { Button } from "@/components/ui/button";
 import { QuotationDocument } from "@/components/quote/quotation-document";
 import { buildQuotationData, isQuotationData } from "@/lib/quote/prefill";
 import { saveQuotation } from "@/lib/admin/quote-actions";
 import type { QuotationData } from "@/lib/quote/types";
 import { QuoteEditor } from "./quote-editor";
-import { Loader2, Minus, Plus, Printer, Save, X } from "lucide-react";
+import { Download, Loader2, Minus, Plus, Save, X } from "lucide-react";
 import { toast } from "sonner";
 
 export interface QuotationLead {
@@ -21,10 +21,6 @@ export interface QuotationLead {
 }
 
 const ZOOMS = [0.5, 0.65, 0.8, 1];
-
-const noopSubscribe = () => () => {};
-/** False on the server & hydration render, true afterwards — safe portal gate. */
-const useMounted = () => useSyncExternalStore(noopSubscribe, () => true, () => false);
 
 export function QuotationDialog({ lead, onClose }: { lead: QuotationLead; onClose: () => void }) {
   const initial: QuotationData = useMemo(() => {
@@ -42,52 +38,8 @@ export function QuotationDialog({ lead, onClose }: { lead: QuotationLead; onClos
   const [data, setData] = useState<QuotationData>(initial);
   const [zoom, setZoom] = useState(0.65);
   const [saving, setSaving] = useState(false);
+  const [downloading, setDownloading] = useState(false);
   const [dirty, setDirty] = useState(false);
-  const [printing, setPrinting] = useState(false);
-  const mounted = useMounted();
-  const userInitiatedPrint = useRef(false);
-
-  // The print root renders a full second copy of the document — mounting it
-  // only while printing keeps dialog open fast (no double image decode).
-  useEffect(() => {
-    if (!printing) return;
-    let cancelled = false;
-    const root = document.querySelector(".quote-print-root");
-    const imgs = root ? Array.from(root.querySelectorAll("img")) : [];
-    const wait = (img: HTMLImageElement) =>
-      img.complete ? Promise.resolve() : new Promise<void>((res) => {
-        img.addEventListener("load", () => res(), { once: true });
-        img.addEventListener("error", () => res(), { once: true });
-      });
-    Promise.all(imgs.map(wait)).then(() => {
-      if (cancelled) return;
-      requestAnimationFrame(() => {
-        if (userInitiatedPrint.current) {
-          userInitiatedPrint.current = false;
-          window.print();
-          setPrinting(false);
-        }
-      });
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [printing]);
-
-  // Ctrl+P / Cmd+P inside the dialog still needs the print root mounted.
-  useEffect(() => {
-    const onBeforePrint = () => {
-      userInitiatedPrint.current = false;
-      setPrinting(true);
-    };
-    window.addEventListener("beforeprint", onBeforePrint);
-    return () => window.removeEventListener("beforeprint", onBeforePrint);
-  }, []);
-
-  const handlePrint = () => {
-    userInitiatedPrint.current = true;
-    setPrinting(true);
-  };
 
   const update = (next: QuotationData) => {
     setData(next);
@@ -111,6 +63,36 @@ export function QuotationDialog({ lead, onClose }: { lead: QuotationLead; onClos
     }
   };
 
+  // Unsaved edits must not be lost in the PDF: persist first, then render
+  // the saved quotation server-side via headless Chromium.
+  const handleDownload = async () => {
+    if (downloading) return;
+    setDownloading(true);
+    try {
+      if (dirty) {
+        const res = await saveQuotation(lead.id, data);
+        if (res?.success) {
+          setDirty(false);
+        } else {
+          throw new Error("save failed");
+        }
+      }
+      const res = await fetch(`/api/quote-pdf?id=${lead.id}`);
+      if (!res.ok) throw new Error(`pdf failed: ${res.status}`);
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${lead.clientName.replace(/[^a-zA-Z0-9]+/g, "-") || "Client"}-Quotation.pdf`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch {
+      toast.error("Failed to generate PDF. Save your changes and try again.");
+    } finally {
+      setDownloading(false);
+    }
+  };
+
   return (
     <div className="fixed inset-0 z-50 flex flex-col bg-[#23201b]">
       {/* Header bar */}
@@ -127,9 +109,15 @@ export function QuotationDialog({ lead, onClose }: { lead: QuotationLead; onClos
             variant="outline"
             size="sm"
             className="border-[#4a453c] bg-transparent text-[#f3ecdd] hover:bg-[#3a362f] hover:text-[#f3ecdd]"
-            onClick={handlePrint}
+            onClick={handleDownload}
+            disabled={downloading}
           >
-            <Printer className="size-4" /> Print / Save PDF
+            {downloading ? (
+              <Loader2 className="size-4 animate-spin" />
+            ) : (
+              <Download className="size-4" />
+            )}
+            {downloading ? "Preparing…" : "Download PDF"}
           </Button>
           <Button
             size="sm"
@@ -178,16 +166,6 @@ export function QuotationDialog({ lead, onClose }: { lead: QuotationLead; onClos
           <QuoteEditor data={data} onChange={update} />
         </aside>
       </div>
-
-      {/* Dedicated print root — portal to body so it is not clipped by the
-          fixed overlay (fixed ancestors print as one clipped page) */}
-      {mounted &&
-        createPortal(
-          <div className="quote-print-root">
-            <QuotationDocument data={data} />
-          </div>,
-          document.body,
-        )}
     </div>
   );
 }

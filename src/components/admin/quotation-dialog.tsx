@@ -85,7 +85,9 @@ export function QuotationDialog({ lead, onClose }: { lead: QuotationLead; onClos
       a.href = url;
       a.download = `${lead.clientName.replace(/[^a-zA-Z0-9]+/g, "-") || "Client"}-Quotation.pdf`;
       a.click();
-      URL.revokeObjectURL(url);
+      // Click handlers fetch the blob URL synchronously; Safari can be
+      // flaky if it is revoked on the next tick instead of a small delay.
+      setTimeout(() => URL.revokeObjectURL(url), 100);
     } catch {
       toast.error("Failed to generate PDF. Save your changes and try again.");
     } finally {

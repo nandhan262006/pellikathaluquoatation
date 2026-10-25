@@ -29,7 +29,8 @@ export function DownloadStep() {
       a.href = url;
       a.download = `Pellikathalu-Estimate-${state.clientName || "Client"}.pdf`;
       a.click();
-      URL.revokeObjectURL(url);
+      // Play it safe with Safari: keep the blob URL alive briefly after click
+      setTimeout(() => URL.revokeObjectURL(url), 100);
     } catch {
       toast.error("Failed to generate the PDF. Please try again.");
     } finally {

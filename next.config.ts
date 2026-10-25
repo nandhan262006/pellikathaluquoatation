@@ -11,6 +11,11 @@ const nextConfig: NextConfig = {
     imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
   },
   serverExternalPackages: ["@sparticuz/chromium", "puppeteer-core"],
+  // @sparticuz/chromium locates its .br binaries via a runtime-computed path,
+  // so the file tracer misses them; include them explicitly for the PDF route.
+  outputFileTracingIncludes: {
+    "/api/quote-pdf": ["./node_modules/@sparticuz/chromium/bin/**/*"],
+  },
 };
 
 export default nextConfig;

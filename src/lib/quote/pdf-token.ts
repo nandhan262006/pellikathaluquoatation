@@ -9,7 +9,14 @@ import { createHmac, timingSafeEqual } from "node:crypto";
 const TTL_MS = 10 * 60 * 1000;
 
 function secret(): string {
-  return process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET || "dev-secret";
+  const s = process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET;
+  if (s) return s;
+  // Refuse the insecure default outside dev — a forgeable secret would let
+  // anyone open any quotation by id via the PDF render page.
+  if (process.env.NODE_ENV === "production") {
+    throw new Error("AUTH_SECRET must be set in production");
+  }
+  return "dev-secret";
 }
 
 export function signPdfToken(id: number): { token: string; exp: number } {

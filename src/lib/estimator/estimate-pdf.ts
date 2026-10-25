@@ -122,7 +122,7 @@ export async function buildEstimatePdfBlob(
     doc.text(label, MARGIN, y);
     setFont(size, "400", INK);
     const lines = doc.splitTextToSize(value, CONTENT_W - LABEL_W - 6);
-    doc.text(lines[0] ?? "", MARGIN + LABEL_W, y);
+    doc.text(lines, MARGIN + LABEL_W, y);
     y += 10 + (lines.length - 1) * 9.5;
   };
 
@@ -171,16 +171,16 @@ export async function buildEstimatePdfBlob(
       doc.text(cat.toUpperCase(), MARGIN + 6, y);
       y += 10;
       for (const item of items) {
-        if (y > 780) {
-          doc.addPage();
-          y = MARGIN + 12;
-        }
         setFont(8.25, "400", INK);
         const labelLines = doc.splitTextToSize(
           item.label,
           CONTENT_W - 60 - 6,
         );
         const rowH = 10 + (labelLines.length - 1) * 9.5;
+        if (y + rowH > 790) {
+          doc.addPage();
+          y = MARGIN + 12;
+        }
         doc.text(labelLines, MARGIN, y);
         setFont(8.25, "700", INK);
         doc.text(formatMoneyPlain(item.value), MARGIN + CONTENT_W - 4, y, {

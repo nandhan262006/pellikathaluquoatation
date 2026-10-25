@@ -56,7 +56,19 @@ export async function GET(req: NextRequest) {
       headless: true,
     });
     const page = await browser.newPage();
-    const origin = new URL(req.url).origin;
+
+    // req.url's origin can be an internal address behind proxies/Vercel; the
+    // forwarded headers carry the public host the client actually reached.
+    const fwdHost =
+      req.headers.get("x-forwarded-host") ?? req.nextUrl.host ?? "";
+    const fwdProto =
+      req.headers.get("x-forwarded-proto") ??
+      (req.nextUrl.protocol.replace(":", "") || "https");
+    const origin =
+      fwdHost && !fwdHost.includes("localhost")
+        ? `${fwdProto}://${fwdHost}`
+        : new URL(req.url).origin;
+
     await page.goto(`${origin}/pdf/quotation/${id}?token=${token}&exp=${exp}`, {
       waitUntil: "networkidle0",
       timeout: 45_000,

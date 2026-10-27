@@ -105,10 +105,19 @@ export async function upsertTemplate(data: {
     addOnOptions: JSON.stringify(cleanOptionIds(data.addOnOptions)),
     defaultPrices: data.defaultPrices ?? "{}",
   };
-  if (data.id) {
-    await db.update(eventTemplate).set(payload).where(eq(eventTemplate.id, data.id));
-  } else {
-    await db.insert(eventTemplate).values(payload);
+  try {
+    if (data.id) {
+      await db.update(eventTemplate).set(payload).where(eq(eventTemplate.id, data.id));
+    } else {
+      await db.insert(eventTemplate).values(payload);
+    }
+  } catch (e) {
+    console.error("Failed to save template:", e);
+    const msg = e instanceof Error ? e.message : "";
+    if (/UNIQUE|duplicate/i.test(msg)) {
+      return { success: false, error: "An event type with this ID already exists" };
+    }
+    return { success: false, error: "Failed to save template" };
   }
   revalidatePath("/admin/templates");
   revalidatePath("/estimator");
@@ -204,14 +213,23 @@ export async function createOption(data: {
   if (data.kind !== "coverage" && data.kind !== "addon") {
     throw new Error("Invalid option kind");
   }
-  await db.insert(optionCatalog).values({
-    optionId: cleanId(data.optionId, "ID"),
-    kind: data.kind,
-    label: cleanText(data.label, 80, "Label"),
-    icon: cleanId(data.icon, "Icon"),
-    description: cleanText(data.description, 300, "Description", false),
-    sortOrder: 99,
-  });
+  try {
+    await db.insert(optionCatalog).values({
+      optionId: cleanId(data.optionId, "ID"),
+      kind: data.kind,
+      label: cleanText(data.label, 80, "Label"),
+      icon: cleanId(data.icon, "Icon"),
+      description: cleanText(data.description, 300, "Description", false),
+      sortOrder: 99,
+    });
+  } catch (e) {
+    console.error("Failed to add option:", e);
+    const msg = e instanceof Error ? e.message : "";
+    if (/UNIQUE|duplicate/i.test(msg)) {
+      return { success: false, error: "An option with this ID already exists" };
+    }
+    return { success: false, error: "Failed to add option" };
+  }
   revalidatePath("/admin/templates");
   revalidatePath("/estimator");
   return { success: true };

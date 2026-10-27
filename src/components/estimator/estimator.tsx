@@ -1,9 +1,10 @@
 "use client";
 
-import { useRef, useEffect } from "react";
+import { useRef, useEffect, useCallback } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { ArrowLeft, ArrowRight, SkipForward } from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { STEPS } from "@/lib/estimator/state";
 import { EstimatorProvider, useEstimator } from "@/lib/estimator/state-provider";
@@ -32,56 +33,160 @@ export function Estimator({ templates }: { templates: EventTemplate[] }) {
 
 const SKIPPABLE_STEPS = new Set([3, 4, 5]);
 
+const SAVE_FAILED_COPY =
+  "We couldn't save your estimate. Please try again — or call us at 8522888119 so we can help you book.";
+
+function safeSessionGet(key: string): string | null {
+  try {
+    return window.sessionStorage.getItem(key);
+  } catch {
+    return null;
+  }
+}
+
+function safeSessionSet(key: string, value: string): void {
+  try {
+    window.sessionStorage.setItem(key, value);
+  } catch {
+    // Private-browsing/quota limits only cost us reload dedupe.
+  }
+}
+
+function safeSessionRemove(key: string): void {
+  try {
+    window.sessionStorage.removeItem(key);
+  } catch {
+    /* no-op */
+  }
+}
+
+const SAVED_LEAD_STORAGE_KEY = "pellikathalu-saved-lead";
+const TOAST_THROTTLE_MS = 30_000;
+
+type LeadSavePayload = Parameters<typeof saveEstimateLead>[0];
+type LeadSaveRequest = { key: string; payload: LeadSavePayload };
+
+function doSave(
+  req: LeadSaveRequest,
+  refs: {
+    savedDataRef: React.RefObject<string | null>;
+    inFlightRef: React.RefObject<boolean>;
+    pendingKeyRef: React.RefObject<LeadSaveRequest | null>;
+    lastFailToastRef: React.RefObject<number>;
+  },
+) {
+  refs.inFlightRef.current = true;
+  const notifyFailure = () => {
+    refs.savedDataRef.current = null;
+    // Don't stack toasts when a client is offline and tweaks several fields.
+    if (Date.now() - refs.lastFailToastRef.current > TOAST_THROTTLE_MS) {
+      refs.lastFailToastRef.current = Date.now();
+      toast.error(SAVE_FAILED_COPY);
+    }
+  };
+  saveEstimateLead(req.payload)
+    .then((res) => {
+      if (res?.success) {
+        refs.savedDataRef.current = req.key;
+        safeSessionSet(SAVED_LEAD_STORAGE_KEY, req.key);
+      } else {
+        notifyFailure();
+      }
+    })
+    .catch(notifyFailure)
+    .finally(() => {
+      refs.inFlightRef.current = false;
+      // A newer key queued while this save was in flight must not be lost.
+      const next = refs.pendingKeyRef.current;
+      refs.pendingKeyRef.current = null;
+      if (next && next.key !== refs.savedDataRef.current) doSave(next, refs);
+    });
+}
+
 function EstimatorShell() {
   const { state, dispatch, estimate, deliverables, template } = useEstimator();
   const lastStep = STEPS.length - 1;
   const savedDataRef = useRef<string | null>(null);
+  const inFlightRef = useRef(false);
+  const pendingKeyRef = useRef<LeadSaveRequest | null>(null);
+  const lastFailToastRef = useRef(0);
+  const refsRef = useRef({ savedDataRef, inFlightRef, pendingKeyRef, lastFailToastRef });
+
+  const attemptSave = useCallback((req: LeadSaveRequest) => {
+    doSave(req, refsRef.current);
+  }, []);
 
   useEffect(() => {
-    // A reset clears eventTypeId — clear the dedupe marker with it so a
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    let scheduled: LeadSaveRequest | null = null;
+
+    // A reset clears eventTypeId — clear the dedupe markers with it so a
     // re-completed identical estimate is saved again as a fresh lead.
     if (!state.eventTypeId) {
       savedDataRef.current = null;
+      safeSessionRemove(SAVED_LEAD_STORAGE_KEY);
     }
-    if (state.step < 7 || !state.clientName || !state.clientPhone || !state.eventTypeId) {
-      return;
-    }
-    // Dedupe on quote content only — NOT on raw state, which includes
-    // state.step (moving Estimate -> Download would otherwise re-save an
-    // identical lead and create duplicates).
-    const saveKey = JSON.stringify([
-      state.clientName,
-      state.clientPhone,
-      state.eventTypeId,
-      template?.id ?? null,
-      state.selectedSubEvents,
-      state.subEventConfig,
-      state.album,
-      estimate?.total ?? 0,
-    ]);
-    if (savedDataRef.current === saveKey) return;
-    savedDataRef.current = saveKey;
-    const estimateJSON = JSON.stringify({ state, estimate, deliverables });
-    saveEstimateLead({
-      clientName: state.clientName,
-      clientPhone: state.clientPhone,
-      eventType: state.eventTypeId,
-      eventName: template?.name ?? "",
-      estimateData: estimateJSON,
-    })
-      .then((res) => {
-        if (!res?.success) {
-          // Server rejected the lead (validation/DB) — reset the dedupe
-          // marker so the save is retried if the user fixes the data.
-          savedDataRef.current = null;
-          console.warn("Failed to auto-save estimate lead");
+
+    // Never auto-save a zero-value lead: steps 3–5 are skippable, and an
+    // empty estimate is not a real enquiry the studio can work from.
+    if (
+      state.step >= 7 &&
+      state.clientName &&
+      state.clientPhone &&
+      state.eventTypeId &&
+      template &&
+      !estimate.isEmpty
+    ) {
+      // Capture late-validated fields so the narrow types survive into the
+      // async save callbacks.
+      const clientName = state.clientName;
+      const clientPhone = state.clientPhone;
+      const eventTypeId = state.eventTypeId;
+      // Dedupe on quote content only — NOT on raw state, which includes
+      // state.step (moving Estimate -> Download would otherwise re-save an
+      // identical lead and create duplicates).
+      const saveKey = JSON.stringify([
+        clientName,
+        clientPhone,
+        eventTypeId,
+        template.id,
+        state.selectedSubEvents,
+        state.subEventConfig,
+        state.album,
+        estimate.total,
+      ]);
+      const leadPayload: LeadSavePayload = {
+        clientName,
+        clientPhone,
+        eventType: eventTypeId,
+        eventName: template.name,
+        estimateData: JSON.stringify({ state, estimate, deliverables }),
+      };
+      // The in-memory marker dedupes within this mount; sessionStorage
+      // dedupes across reloads in the same tab.
+      if (savedDataRef.current !== saveKey) {
+        if (safeSessionGet(SAVED_LEAD_STORAGE_KEY) === saveKey) {
+          savedDataRef.current = saveKey;
+        } else if (!inFlightRef.current) {
+          scheduled = { key: saveKey, payload: leadPayload };
+          timer = setTimeout(() => {
+            if (scheduled) attemptSave(scheduled);
+          }, 700);
+        } else {
+          pendingKeyRef.current = { key: saveKey, payload: leadPayload };
         }
-      })
-      .catch(() => {
-        console.warn("Failed to auto-save estimate lead");
-        savedDataRef.current = null;
-      });
-  }, [state, state.step, estimate, deliverables, template]);
+      }
+    }
+
+    return () => {
+      // Flush a scheduled save on unmount instead of dropping it — the
+      // debounce otherwise opens a small lost-lead window.
+      if (timer && scheduled) {
+        clearTimeout(timer);
+        attemptSave(scheduled);
+      }
+    };
+  }, [state, state.step, estimate, deliverables, template, attemptSave]);
 
   const canProceed = (() => {
     switch (state.step) {

@@ -6,6 +6,7 @@
 import type {
   EstimateBreakdown,
   EstimatorState,
+  Deliverable,
   DeliverableGroup,
 } from "@/lib/estimator/types";
 import { formatMoney } from "@/lib/estimator/format";
@@ -26,6 +27,68 @@ export function parseEstimateData(raw: string): ParsedEstimate | null {
   } catch {
     return null;
   }
+}
+
+const ESTIMATED_DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+
+/**
+ * Lead data is stored as a raw JSON string from a public form, so every shape
+ * assumption must be defensive here — malformed input must degrade to the
+ * default quotation instead of crashing the document render.
+ */
+function sanitizeParsedEstimate(raw: ParsedEstimate): ParsedEstimate {
+  const out: ParsedEstimate = {};
+
+  if (raw.state && typeof raw.state === "object" && !Array.isArray(raw.state)) {
+    const state = { ...raw.state };
+    if (!state.subEventConfig || typeof state.subEventConfig !== "object" || Array.isArray(state.subEventConfig)) {
+      state.subEventConfig = {};
+    }
+    // Normalise every config entry: coverage/addOns must be string arrays.
+    for (const key of Object.keys(state.subEventConfig)) {
+      const cfg = state.subEventConfig[key];
+      if (!cfg || typeof cfg !== "object") {
+        state.subEventConfig[key] = { id: key, coverage: [], addOns: [], reels: 0 };
+        continue;
+      }
+      state.subEventConfig[key] = {
+        ...cfg,
+        coverage: Array.isArray(cfg.coverage) ? cfg.coverage.filter((id) => typeof id === "string") : [],
+        addOns: Array.isArray(cfg.addOns) ? cfg.addOns.filter((id) => typeof id === "string") : [],
+        reels: typeof cfg.reels === "number" && Number.isFinite(cfg.reels) ? Math.max(0, Math.floor(cfg.reels)) : 0,
+      };
+    }
+    out.state = state;
+  }
+
+  if (raw.estimate && typeof raw.estimate === "object" && !Array.isArray(raw.estimate)) {
+    const estimate = { ...raw.estimate };
+    const rawItems = Array.isArray(estimate.items) ? estimate.items : [];
+    estimate.items = rawItems.filter(
+      (item): item is EstimateBreakdown["items"][number] =>
+        !!item && typeof item === "object" && typeof (item as { value?: unknown }).value === "number",
+    );
+    estimate.total =
+      typeof estimate.total === "number" && Number.isFinite(estimate.total) ? estimate.total : 0;
+    estimate.isEmpty = typeof estimate.isEmpty === "boolean" ? estimate.isEmpty : false;
+    out.estimate = estimate;
+  }
+
+  if (Array.isArray(raw.deliverables)) {
+    out.deliverables = raw.deliverables.filter(
+      (group): group is DeliverableGroup =>
+        !!group &&
+        typeof group === "object" &&
+        Array.isArray((group as { items?: unknown }).items) &&
+        // A group with no usable items yields no events; dropping it lets the
+        // DEFAULT_EVENTS fallback kick in instead of an empty schedule.
+        (group as { items?: unknown[] }).items!.some(
+          (it) => !!it && typeof it === "object",
+        ),
+    );
+  }
+
+  return out;
 }
 
 const EVENT_ICON_KEYS: Record<string, string> = {
@@ -164,8 +227,14 @@ export function buildQuotationData(lead: {
   estimateData: string;
 }): QuotationData {
   const parsed = parseEstimateData(lead.estimateData) ?? {};
-  const estimate = parsed.estimate;
-  const state = parsed.state;
+  const clean = sanitizeParsedEstimate(parsed);
+  const estimate = clean.estimate;
+  const state = clean.state;
+  const deliverables = clean.deliverables;
+  const estimatedDate =
+    typeof state?.estimatedDate === "string" && ESTIMATED_DATE_RE.test(state.estimatedDate)
+      ? state.estimatedDate
+      : "";
   const total = estimate && !estimate.isEmpty ? estimate.total : 0;
 
   // Derive the event schedule from the estimate items grouped by sub-event.
@@ -177,25 +246,30 @@ export function buildQuotationData(lead: {
       if (item.group === "Albums") continue;
       const subName = item.detail ?? "";
       if (!bySub.has(subName)) bySub.set(subName, []);
-      bySub.get(subName)!.push({ label: item.label, value: item.value });
+      bySub.get(subName)!.push({ label: String(item.label ?? ""), value: item.value });
     }
     events = [...bySub.entries()].map(([name, items], i) => ({
       id: `ev-${i}`,
       name: name.toUpperCase(),
-      date: prettyDate(state?.estimatedDate ?? ""),
+      date: prettyDate(estimatedDate),
       team: deriveTeam(items),
       icon: EVENT_ICON_KEYS[
         Object.keys(EVENT_ICON_KEYS).find((k) => name.toLowerCase().includes(k)) ?? "other"
       ],
     }));
-  } else if (parsed.deliverables && parsed.deliverables.length > 0) {
+  } else if (deliverables && deliverables.length > 0) {
     const names = [
-      ...new Set(parsed.deliverables.flatMap((g) => g.items.map((it) => it.subEvent ?? ""))),
+      ...new Set(
+        deliverables
+          .flatMap((g) => g.items)
+          .filter((it) => !!it && typeof it === "object" && typeof (it as Deliverable).subEvent === "string")
+          .map((it) => (it as Deliverable).subEvent ?? ""),
+      ),
     ].filter(Boolean);
     events = names.map((name, i) => ({
       id: `ev-${i}`,
       name: name.toUpperCase(),
-      date: prettyDate(state?.estimatedDate ?? ""),
+      date: prettyDate(estimatedDate),
       team: "1 Photographer / 1 Videographer",
       icon: EVENT_ICON_KEYS[
         Object.keys(EVENT_ICON_KEYS).find((k) => name.toLowerCase().includes(k)) ?? "other"
@@ -204,12 +278,12 @@ export function buildQuotationData(lead: {
   } else {
     events = DEFAULT_EVENTS.map((e) => ({
       ...e,
-      date: prettyDate(state?.estimatedDate ?? ""),
+      date: prettyDate(estimatedDate),
     }));
   }
 
-  const dateLabel = state?.estimatedDate
-    ? new Date(`${state.estimatedDate}T00:00:00`).toLocaleDateString("en-IN", {
+  const dateLabel = estimatedDate
+    ? new Date(`${estimatedDate}T00:00:00`).toLocaleDateString("en-IN", {
         day: "numeric",
         month: "long",
         year: "numeric",
@@ -255,7 +329,7 @@ export function buildQuotationData(lead: {
       "This excludes travel, accommodation, food & any add-on services.",
 
     addonsIntro: "Additional offerings to make the most of your day",
-    services: defaultServices(parsed),
+    services: defaultServices(clean),
 
     timeline: TIMELINE_ROWS.map((r) => ({ ...r })),
     timelineNote:

@@ -23,7 +23,16 @@ let modulePromise: Promise<typeof import("jspdf").jsPDF> | null = null;
 const fontCache = new Map<string, string>();
 
 function loadModule(): Promise<typeof import("jspdf").jsPDF> {
-  modulePromise ??= import("jspdf").then((m) => m.jsPDF);
+  // A failed dynamic import is evicted from the cache, otherwise a single
+  // network blip would break every subsequent download until a full reload.
+  if (!modulePromise) {
+    modulePromise = import("jspdf")
+      .then((m) => m.jsPDF)
+      .catch((e) => {
+        modulePromise = null;
+        throw e;
+      });
+  }
   return modulePromise;
 }
 

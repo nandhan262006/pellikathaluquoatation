@@ -18,8 +18,6 @@ export async function saveEstimateLead(data: {
   eventName: string;
   estimateData: string;
 }) {
-  const db = getDb();
-
   const clientName = cleanString(data.clientName, 80);
   const clientPhone = cleanString(data.clientPhone, 15).replace(/\D/g, "").slice(0, 10);
   const eventType = cleanString(data.eventType, 40);
@@ -34,6 +32,7 @@ export async function saveEstimateLead(data: {
   }
 
   try {
+    const db = getDb();
     await db.insert(estimateLead).values({
       clientName,
       clientPhone,
@@ -50,8 +49,8 @@ export async function saveEstimateLead(data: {
 
 export async function getEstimateLeads() {
   await requireAdmin();
-  const db = getDb();
   try {
+    const db = getDb();
     return await db
       .select()
       .from(estimateLead)
@@ -64,8 +63,8 @@ export async function getEstimateLeads() {
 
 export async function markEstimateComplete(id: number) {
   await requireAdmin();
-  const db = getDb();
   try {
+    const db = getDb();
     await db.update(estimateLead).set({ status: "completed" }).where(eq(estimateLead.id, id));
     revalidatePath("/admin/estimates");
     return { success: true };
@@ -77,8 +76,8 @@ export async function markEstimateComplete(id: number) {
 
 export async function deleteEstimateLead(id: number) {
   await requireAdmin();
-  const db = getDb();
   try {
+    const db = getDb();
     await db.delete(estimateLead).where(eq(estimateLead.id, id));
     revalidatePath("/admin/estimates");
     return { success: true };

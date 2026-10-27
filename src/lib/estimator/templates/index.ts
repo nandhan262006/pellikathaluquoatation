@@ -68,7 +68,11 @@ async function loadDbTemplates(
         const result: Record<ID, PriceRange> = {};
         if (!map) return result;
         for (const [key, val] of Object.entries(map)) {
-          result[key] = { value: val };
+          // Only finite numbers survive the merge — a bad admin override must
+          // never poison a client's grand total with NaN.
+          if (typeof val === "number" && Number.isFinite(val)) {
+            result[key] = { value: val };
+          }
         }
         return result;
       }
@@ -107,16 +111,16 @@ async function loadDbTemplates(
 
       const templateSubEvents = allSubEvents.filter((se) => se.templateId === t.id);
       const subEventDefs = templateSubEvents.map((se) => {
-        const overrides: Record<string, unknown> = safeJson<Record<string, unknown>>(se.priceOverrides) ?? {};
+        const rawOverrides = safeJson<Record<string, unknown>>(se.priceOverrides) ?? {};
         return {
           id: se.subEventId,
           name: se.name,
           description: se.description || undefined,
           defaultSelected: Boolean(se.defaultSelected),
           maxReels: se.maxReels ?? undefined,
-          coverage: overrides.coverage as unknown as Partial<Record<ID, PriceRange>> | undefined,
-          addOns: overrides.addOns as unknown as Partial<Record<ID, PriceRange>> | undefined,
-          reel: overrides.reel as unknown as PriceRange | undefined,
+          coverage: sanitizePriceMap(rawOverrides.coverage),
+          addOns: sanitizePriceMap(rawOverrides.addOns),
+          reel: sanitizePriceRange(rawOverrides.reel),
         };
       });
 
@@ -151,6 +155,30 @@ async function loadDbTemplates(
 
 function safeJson<T>(val: string): T | null {
   try { return JSON.parse(val) as T; } catch { return null; }
+}
+
+function isPriceRange(v: unknown): v is PriceRange {
+  return (
+    !!v &&
+    !Array.isArray(v) &&
+    typeof v === "object" &&
+    typeof (v as { value?: unknown }).value === "number" &&
+    Number.isFinite((v as { value: number }).value)
+  );
+}
+
+/** Keeps only entries whose price is a finite number; anything else is dropped. */
+function sanitizePriceMap(src: unknown): Partial<Record<ID, PriceRange>> | undefined {
+  if (!src || typeof src !== "object" || Array.isArray(src)) return undefined;
+  const out: Partial<Record<ID, PriceRange>> = {};
+  for (const [key, val] of Object.entries(src)) {
+    if (isPriceRange(val)) out[key] = val;
+  }
+  return Object.keys(out).length > 0 ? out : undefined;
+}
+
+function sanitizePriceRange(v: unknown): PriceRange | undefined {
+  return isPriceRange(v) ? v : undefined;
 }
 
 function applyZeroPriceFilter(t: EventTemplate): EventTemplate {

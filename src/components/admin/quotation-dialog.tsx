@@ -83,7 +83,7 @@ export function QuotationDialog({ lead, onClose }: { lead: QuotationLead; onClos
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `${lead.clientName.replace(/[^a-zA-Z0-9]+/g, "-") || "Client"}-Quotation.pdf`;
+      a.download = `${lead.clientName.replace(/[^\p{L}\p{N}]+/gu, "-") || "Client"}-Quotation.pdf`;
       a.click();
       // Click handlers fetch the blob URL synchronously; Safari can be
       // flaky if it is revoked on the next tick instead of a small delay.

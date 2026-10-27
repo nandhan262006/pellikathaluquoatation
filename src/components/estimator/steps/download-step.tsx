@@ -27,7 +27,7 @@ export function DownloadStep() {
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `Pellikathalu-Estimate-${state.clientName || "Client"}.pdf`;
+      a.download = `Pellikathalu-Estimate-${state.clientName.replace(/[^\p{L}\p{N}]+/gu, "-") || "Client"}.pdf`;
       a.click();
       // Play it safe with Safari: keep the blob URL alive briefly after click
       setTimeout(() => URL.revokeObjectURL(url), 100);

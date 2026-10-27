@@ -157,7 +157,11 @@ function EventsEditor({
     try {
       const templateId = editing === NEW_ID ? undefined : editing ?? undefined;
       const existing = typeof templateId === "number" ? templates.find((t) => t.id === templateId) : null;
-      await upsertTemplate({ ...form, id: templateId, defaultPrices: existing?.defaultPrices });
+      const res = await upsertTemplate({ ...form, id: templateId, defaultPrices: existing?.defaultPrices });
+      if (res && !res.success) {
+        toast.error(res.error ?? "Failed to save");
+        return;
+      }
       toast.success("Saved");
       setEditing(null);
       router.refresh();
@@ -431,7 +435,7 @@ function ReelsEditor({ templates }: { templates: Template[] }) {
     if (!t) return;
     setSaving(true);
     try {
-      await upsertTemplate({
+      const res = await upsertTemplate({
         id: editing,
         typeId: t.typeId, name: t.name, tagline: t.tagline,
         description: t.description, icon: t.icon, isActive: t.isActive,
@@ -440,6 +444,10 @@ function ReelsEditor({ templates }: { templates: Template[] }) {
         coverageOptions: safeParse(t.coverageOptions) ?? [], addOnOptions: safeParse(t.addOnOptions) ?? [],
         defaultPrices: t.defaultPrices,
       });
+      if (res && !res.success) {
+        toast.error(res.error ?? "Failed to save");
+        return;
+      }
       toast.success("Saved");
       setEditing(null);
       router.refresh();
@@ -523,7 +531,7 @@ function PricesEditor({
     const reel = reelPrice ? { value: Number(reelPrice) } : undefined;
     const defaultPrices = JSON.stringify({ coverage, addOns, ...(reel ? { reel } : {}) });
     try {
-      await upsertTemplate({
+      const res = await upsertTemplate({
         id: selectedTemplate,
         typeId: tmpl.typeId, name: tmpl.name, tagline: tmpl.tagline,
         description: tmpl.description, icon: tmpl.icon, isActive: tmpl.isActive,
@@ -533,6 +541,10 @@ function PricesEditor({
         addOnOptions: safeParse(tmpl.addOnOptions) ?? [],
         defaultPrices,
       });
+      if (res && !res.success) {
+        toast.error(res.error ?? "Failed to save");
+        return;
+      }
       toast.success("Default prices saved");
       router.refresh();
     } catch (e) {
@@ -639,7 +651,11 @@ function OptionsEditor({ options }: { options: CatalogOption[] }) {
     if (saving) return;
     setSaving(true);
     try {
-      await createOption(form);
+      const res = await createOption(form);
+      if (res && !res.success) {
+        toast.error(res.error ?? "Failed to add option");
+        return;
+      }
       toast.success("Option added");
       setAdding(false);
       setForm({ optionId: "", kind: "addon", label: "", icon: "wand", description: "" });

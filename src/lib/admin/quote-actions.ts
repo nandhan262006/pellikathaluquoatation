@@ -6,6 +6,7 @@ import { estimateLead } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import { isQuotationData } from "@/lib/quote/prefill";
 import type { QuotationData } from "@/lib/quote/types";
+import { invalidatePdf } from "@/lib/quote/pdf-cache";
 
 const MAX_QUOTATION_DATA_LENGTH = 128_000;
 
@@ -17,6 +18,7 @@ export async function saveQuotation(id: number, data: QuotationData) {
     const json = JSON.stringify(data);
     if (json.length > MAX_QUOTATION_DATA_LENGTH) return { success: false };
     await db.update(estimateLead).set({ quotationData: json }).where(eq(estimateLead.id, id));
+    invalidatePdf(id);
     revalidatePath("/admin/estimates");
     return { success: true };
   } catch (e) {

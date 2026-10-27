@@ -14,13 +14,7 @@ import { getCachedPdf, setCachedPdf } from "@/lib/quote/pdf-cache";
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
-const EXTRA_ARGS = [
-  "--disable-dev-shm-usage",
-  "--disable-setuid-sandbox",
-  "--no-sandbox",
-  "--disable-gpu",
-  "--disable-software-rasterizer",
-];
+const EXTRA_ARGS = ["--disable-dev-shm-usage"];
 
 /**
  * Warm-instance state for repeated PDF renders. Vercel lambdas freeze
@@ -32,7 +26,7 @@ type PdfGlobal = typeof globalThis & {
   __quotePdf?: {
     browser?: import("puppeteer-core").Browser | null;
     browserPromise?: Promise<import("puppeteer-core").Browser> | null;
-    execPath?: string | null;
+    execArgs?: { path: string; args: string[] } | null;
     gsAvailable?: boolean | null;
   };
 };
@@ -45,10 +39,21 @@ function discardBrowser() {
   pdfGlobal.browserPromise = null;
 }
 
-/** System Chrome for local dev; @sparticuz/chromium in production. */
-async function resolveExecutablePath(): Promise<string> {
-  if (pdfGlobal.execPath) return pdfGlobal.execPath;
+/**
+ * System Chrome for local dev; @sparticuz/chromium in production.
+ * IMPORTANT: always launch with the full `chromium.args` set — those flags
+ * (SwiftShader/software-GL defaults) are what keep headless Chromium stable
+ * in the lambda. Overriding them with a custom subset crashes the process
+ * on every launch (Target.createTarget: Target closed).
+ */
+async function resolveExecutablePath(): Promise<{
+  path: string;
+  args: string[];
+}> {
+  if (pdfGlobal.execArgs) return pdfGlobal.execArgs;
   const { default: chromium } = await import("@sparticuz/chromium");
+  const args = Array.isArray(chromium.args) ? [...chromium.args] : [];
+  let exec = await chromium.executablePath();
   if (process.env.NODE_ENV !== "production") {
     for (const p of [
       process.env.CHROME_PATH,
@@ -58,24 +63,24 @@ async function resolveExecutablePath(): Promise<string> {
       "/usr/bin/chromium-browser",
     ]) {
       if (p && existsSync(p)) {
-        pdfGlobal.execPath = p;
-        return p;
+        exec = p;
+        break;
       }
     }
   }
-  const path = await chromium.executablePath();
-  pdfGlobal.execPath = path;
-  return path;
+  const resolved = { path: exec, args };
+  pdfGlobal.execArgs = resolved;
+  return resolved;
 }
 
 async function launchBrowser(): Promise<import("puppeteer-core").Browser> {
-  const [{ default: puppeteer }, executablePath] = await Promise.all([
+  const [{ default: puppeteer }, { path, args }] = await Promise.all([
     import("puppeteer-core"),
     resolveExecutablePath(),
   ]);
   const browser = await puppeteer.launch({
-    executablePath,
-    args: EXTRA_ARGS,
+    executablePath: path,
+    args: [...(args || []), ...EXTRA_ARGS],
     headless: true,
   });
   pdfGlobal.browser = browser;
@@ -191,7 +196,6 @@ async function renderWithBrowser(
     await page.setDefaultNavigationTimeout(45000);
     await page.setDefaultTimeout(45000);
 
-    await page.emulateMediaType("print");
     await page.goto(
       `${originBase}/pdf/quotation/${leadId}?token=${token}&exp=${exp}`,
       {

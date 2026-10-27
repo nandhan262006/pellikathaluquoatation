@@ -199,29 +199,18 @@ async function renderWithBrowser(
     await page.goto(
       `${originBase}/pdf/quotation/${leadId}?token=${token}&exp=${exp}`,
       {
-        waitUntil: "domcontentloaded",
+        // networkidle0 resolves only after EVERY resource (all quote-art
+        // images, fonts, CSS) has finished its network request — the page
+        // is then physically complete. Do NOT use in-page evaluate() waits:
+        // this Chromium build (headless shell, --single-process) hangs or
+        // crashes the renderer on inline evaluation, which froze generation
+        // until the lambda timeout in production.
+        waitUntil: "networkidle0",
         timeout: 45000,
       },
     );
-    await page
-      .evaluate(async () => {
-        // Chromium's PDF engine rasterizes whatever is on screen; wait for
-        // every image (quote-art artwork) and the web fonts to be settled.
-        const imgs = Array.from(document.images);
-        await Promise.all(
-          imgs.map((img) =>
-            img.complete
-              ? Promise.resolve()
-              : new Promise<void>((res) => {
-                  img.addEventListener("load", () => res(), { once: true });
-                  img.addEventListener("error", () => res(), { once: true });
-                }),
-          ),
-        );
-        if (document.fonts?.ready) await document.fonts.ready;
-        await new Promise((r) => setTimeout(r, 200));
-      })
-      .catch(() => {});
+    // Short settle in the Node process so pending paints flush before print.
+    await new Promise((r) => setTimeout(r, 300));
     const pdf = await page.pdf({
       format: "A4",
       printBackground: true,

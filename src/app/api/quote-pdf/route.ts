@@ -14,41 +14,11 @@ import { getCachedPdf, setCachedPdf } from "@/lib/quote/pdf-cache";
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
-/**
- * Warm-instance state. On Vercel, a lambda instance serves many requests;
- * re-extracting Chromium and relaunching the browser on every invocation is
- * the single biggest source of "PDF takes forever to start loading". Store
- * the browser (and the extracted executable path) on globalThis so warm
- * invocations reuse it.
- */
-type PdfGlobal = typeof globalThis & {
-  __quotePdf?: {
-    browser?: import("puppeteer-core").Browser | null;
-    browserPromise?: Promise<import("puppeteer-core").Browser> | null;
-    execPath?: string | null;
-    gsAvailable?: boolean | null;
-  };
-};
-const g = globalThis as PdfGlobal;
-g.__quotePdf ??= {};
-const pdfGlobal = g.__quotePdf;
-
-const EXTRA_ARGS = [
-  "--disable-dev-shm-usage",
-  "--disable-setuid-sandbox",
-  "--no-sandbox",
-  "--disable-gpu",
-  "--disable-software-rasterizer",
-];
-
 /** System Chrome for local dev; @sparticuz/chromium in production. */
 async function resolveExecutablePath(): Promise<{
   path: string;
   args: string[];
 }> {
-  if (pdfGlobal.execPath) {
-    return { path: pdfGlobal.execPath, args: [] };
-  }
   const { default: chromium } = await import("@sparticuz/chromium");
   if (process.env.NODE_ENV !== "production") {
     for (const p of [
@@ -59,64 +29,20 @@ async function resolveExecutablePath(): Promise<{
       "/usr/bin/chromium-browser",
     ]) {
       if (p && existsSync(p)) {
-        pdfGlobal.execPath = p;
-        return { path: p, args: [] };
+        const baseArgs = Array.isArray((chromium as any).args)
+          ? [...(chromium as any).args]
+          : [];
+        return { path: p, args: baseArgs };
       }
     }
   }
-  const path = await chromium.executablePath();
-  pdfGlobal.execPath = path;
-  return { path, args: [] };
-}
-
-async function getBrowser(): Promise<import("puppeteer-core").Browser> {
-  const existing = pdfGlobal.browser;
-  if (existing && existing.connected) {
-    return existing;
-  }
-  pdfGlobal.browser = null;
-
-  if (!pdfGlobal.browserPromise) {
-    const [{ default: puppeteer }, { path, args }] = await Promise.all([
-      import("puppeteer-core"),
-      resolveExecutablePath(),
-    ]);
-    pdfGlobal.browserPromise = puppeteer
-      .launch({
-        executablePath: path,
-        args: [...(args || []), ...EXTRA_ARGS],
-        headless: true,
-      })
-      .then((b) => {
-        pdfGlobal.browser = b;
-        b.on("disconnected", () => {
-          pdfGlobal.browser = null;
-          pdfGlobal.browserPromise = null;
-        });
-        return b;
-      })
-      .catch((e) => {
-        pdfGlobal.browserPromise = null;
-        throw e;
-      });
-  }
-  return pdfGlobal.browserPromise;
-}
-
-/** Ghostscript is NOT present in the Vercel lambda filesystem. */
-function isGsAvailable(): boolean {
-  if (pdfGlobal.gsAvailable !== null && pdfGlobal.gsAvailable !== undefined) {
-    return pdfGlobal.gsAvailable;
-  }
-  const found = ["/usr/bin/gs", "/usr/local/bin/gs", "/bin/gs"].some((p) =>
-    existsSync(p),
-  );
-  pdfGlobal.gsAvailable = found;
-  return found;
+  const args = Array.isArray((chromium as any).args)
+    ? [...(chromium as any).args]
+    : [];
+  return { path: await chromium.executablePath(), args };
 }
 
 function optimizePdfWithGhostscript(input: Uint8Array): Promise<Uint8Array> {
-  if (!isGsAvailable()) return Promise.resolve(input);
   return new Promise((resolve, reject) => {
     const id = randomUUID();
     const inPath = join(tmpdir(), `quote-${id}.pdf`);
@@ -179,11 +105,27 @@ async function generateQuotationPdf(leadId: number, originBase?: string): Promis
     throw new Error("Lead not found");
   }
 
-  let page: import("puppeteer-core").Page | null = null;
+  let browser: import("puppeteer-core").Browser | null = null;
   try {
-    const { token, exp } = signPdfToken(leadId);
-    const browser = await getBrowser();
-    page = await browser.newPage();
+    const [{ default: puppeteer }, { token, exp }] = await Promise.all([
+      import("puppeteer-core"),
+      Promise.resolve(signPdfToken(leadId)),
+    ]);
+    const { path: executablePath, args } = await resolveExecutablePath();
+
+    browser = await puppeteer.launch({
+      executablePath,
+      args: [
+        ...(args || []),
+        "--disable-dev-shm-usage",
+        "--disable-setuid-sandbox",
+        "--no-sandbox",
+        "--disable-gpu",
+        "--disable-software-rasterizer",
+      ],
+      headless: true,
+    });
+    const page = await browser.newPage();
     await page.setDefaultNavigationTimeout(45000);
     await page.setDefaultTimeout(45000);
 
@@ -196,35 +138,18 @@ async function generateQuotationPdf(leadId: number, originBase?: string): Promis
     await page.goto(
       `${origin}/pdf/quotation/${leadId}?token=${token}&exp=${exp}`,
       {
-        waitUntil: "domcontentloaded",
+        waitUntil: ["domcontentloaded"],
         timeout: 45000,
       },
     );
     await page
       .evaluate(async () => {
-        // Wait for every image (quote-art artwork) to be fully decoded,
-        // then fonts, then a short settle. Chromium's PDF engine rasterizes
-        // whatever is on screen; half-loaded images end up blank or late.
-        const imgs = Array.from(document.images);
-        await Promise.all(
-          imgs.map((img) =>
-            img.complete
-              ? Promise.resolve()
-              : new Promise<void>((res) => {
-                  img.addEventListener("load", () => res(), { once: true });
-                  img.addEventListener("error", () => res(), { once: true });
-                }),
-          ),
-        );
-        if (document.fonts?.ready) await document.fonts.ready;
+        if ((document as any).fonts && (document as any).fonts.ready) {
+          await (document as any).fonts.ready;
+        }
         await new Promise((r) => setTimeout(r, 200));
       })
       .catch(() => {});
-    // Belt-and-braces: short network idle so any late requests settle.
-    await page
-      .waitForNetworkIdle({ idleTime: 300, timeout: 5000 })
-      .catch(() => {});
-
     const pdf = await page.pdf({
       format: "A4",
       printBackground: true,
@@ -232,8 +157,8 @@ async function generateQuotationPdf(leadId: number, originBase?: string): Promis
       margin: { top: 0, right: 0, bottom: 0, left: 0 },
       timeout: 45000,
     });
-    await page.close();
-    page = null;
+    await browser.close();
+    browser = null;
 
     let optimized: Uint8Array;
     try {
@@ -246,7 +171,7 @@ async function generateQuotationPdf(leadId: number, originBase?: string): Promis
     const filename = `${lead.clientName.replace(/[^a-zA-Z0-9]+/g, "-") || "Client"}-Quotation.pdf`;
     return { buf: optimized, filename };
   } finally {
-    if (page) await page.close().catch(() => {});
+    if (browser) await browser.close().catch(() => {});
   }
 }
 
@@ -266,9 +191,8 @@ export async function GET(req: NextRequest) {
     return Response.json({ error: "Lead not found" }, { status: 404 });
   }
 
-  // Try cache first — keyed by quotationData content, invalidated on save
-  const cacheStamp = lead.quotationData?.length ?? 0;
-  const cached = getCachedPdf(id, cacheStamp);
+  // Try cache first
+  const cached = getCachedPdf(id, (lead as any).updatedAt);
   if (cached) {
     const ifNoneMatch = req.headers.get("if-none-match");
     if (ifNoneMatch && ifNoneMatch === cached.etag) {
@@ -329,7 +253,7 @@ export async function GET(req: NextRequest) {
 
   try {
     const { buf, filename } = await generateQuotationPdf(id, origin);
-    const cachedResult = setCachedPdf(id, cacheStamp, buf, filename);
+    const cachedResult = setCachedPdf(id, (lead as any).updatedAt, buf, filename);
 
     const ifNoneMatch = req.headers.get("if-none-match");
     if (ifNoneMatch && ifNoneMatch === cachedResult.etag) {

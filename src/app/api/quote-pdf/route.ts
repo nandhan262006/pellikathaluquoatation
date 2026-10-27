@@ -272,7 +272,11 @@ function pdfResponse(
       "Content-Length": String(buf.byteLength),
       "ETag": etag,
       "Accept-Ranges": "bytes",
-      "Cache-Control": "private, max-age=300, stale-while-revalidate=600",
+      // no-cache (not max-age): every download must revalidate by ETag.
+      // max-age would let the browser serve a stale PDF for up to 5 minutes
+      // after admin saves edits, since the dialog fetches this URL directly.
+      // Unchanged quotes revalidate to a cheap 304; changed ones get 200.
+      "Cache-Control": "private, no-cache",
     },
   });
 }
@@ -287,7 +291,7 @@ function conditionalResponse(
       status: 304,
       headers: {
         "ETag": etag,
-        "Cache-Control": "private, max-age=300, stale-while-revalidate=600",
+        "Cache-Control": "private, no-cache",
         "Accept-Ranges": "bytes",
       },
     });
@@ -318,13 +322,19 @@ function rangeResponse(
       "Accept-Ranges": "bytes",
       "Content-Length": String(chunk.byteLength),
       "ETag": etag,
-      "Cache-Control": "private, max-age=300, stale-while-revalidate=600",
+      "Cache-Control": "private, no-cache",
     },
   });
 }
 
 export async function GET(req: NextRequest) {
-  await requireAdmin();
+  // requireAdmin throws; caught here so anonymous pings get a clean 401
+  // (and stop spamming an unhandled-error stack into the Vercel logs).
+  try {
+    await requireAdmin();
+  } catch {
+    return Response.json({ error: "Unauthorized" }, { status: 401 });
+  }
 
   const id = Number(req.nextUrl.searchParams.get("id"));
   if (!Number.isInteger(id) || id <= 0) {

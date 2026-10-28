@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
-import "./globals.css";
+import "../globals.css";
 import { Toaster } from "@/components/ui/sonner";
 import { Footer } from "@/components/footer";
 
@@ -16,42 +16,42 @@ import { Footer } from "@/components/footer";
 const geistSans = localFont({
   variable: "--font-geist-sans",
   src: [
-    { path: "./fonts/geist-normal-400.woff2", weight: "400" },
-    { path: "./fonts/geist-normal-500.woff2", weight: "500" },
-    { path: "./fonts/geist-normal-600.woff2", weight: "600" },
-    { path: "./fonts/geist-normal-700.woff2", weight: "700" },
+    { path: "../fonts/geist-normal-400.woff2", weight: "400" },
+    { path: "../fonts/geist-normal-500.woff2", weight: "500" },
+    { path: "../fonts/geist-normal-600.woff2", weight: "600" },
+    { path: "../fonts/geist-normal-700.woff2", weight: "700" },
   ],
 });
 
 const geistMono = localFont({
   variable: "--font-geist-mono",
-  src: [{ path: "./fonts/geistmono-normal-400.woff2", weight: "400" }],
+  src: [{ path: "../fonts/geistmono-normal-400.woff2", weight: "400" }],
 });
 
 const cormorant = localFont({
   variable: "--font-cormorant",
   src: [
-    { path: "./fonts/cormorantgaramond-normal-300.woff2", weight: "300", style: "normal" },
-    { path: "./fonts/cormorantgaramond-normal-400.woff2", weight: "400", style: "normal" },
-    { path: "./fonts/cormorantgaramond-normal-500.woff2", weight: "500", style: "normal" },
-    { path: "./fonts/cormorantgaramond-normal-600.woff2", weight: "600", style: "normal" },
-    { path: "./fonts/cormorantgaramond-normal-700.woff2", weight: "700", style: "normal" },
-    { path: "./fonts/cormorantgaramond-italic-300.woff2", weight: "300", style: "italic" },
-    { path: "./fonts/cormorantgaramond-italic-400.woff2", weight: "400", style: "italic" },
-    { path: "./fonts/cormorantgaramond-italic-600.woff2", weight: "600", style: "italic" },
-    { path: "./fonts/cormorantgaramond-italic-700.woff2", weight: "700", style: "italic" },
+    { path: "../fonts/cormorantgaramond-normal-300.woff2", weight: "300", style: "normal" },
+    { path: "../fonts/cormorantgaramond-normal-400.woff2", weight: "400", style: "normal" },
+    { path: "../fonts/cormorantgaramond-normal-500.woff2", weight: "500", style: "normal" },
+    { path: "../fonts/cormorantgaramond-normal-600.woff2", weight: "600", style: "normal" },
+    { path: "../fonts/cormorantgaramond-normal-700.woff2", weight: "700", style: "normal" },
+    { path: "../fonts/cormorantgaramond-italic-300.woff2", weight: "300", style: "italic" },
+    { path: "../fonts/cormorantgaramond-italic-400.woff2", weight: "400", style: "italic" },
+    { path: "../fonts/cormorantgaramond-italic-600.woff2", weight: "600", style: "italic" },
+    { path: "../fonts/cormorantgaramond-italic-700.woff2", weight: "700", style: "italic" },
   ],
 });
 
 const lora = localFont({
   variable: "--font-lora",
   src: [
-    { path: "./fonts/lora-normal-400.woff2", weight: "400", style: "normal" },
-    { path: "./fonts/lora-normal-500.woff2", weight: "500", style: "normal" },
-    { path: "./fonts/lora-normal-600.woff2", weight: "600", style: "normal" },
-    { path: "./fonts/lora-normal-700.woff2", weight: "700", style: "normal" },
-    { path: "./fonts/lora-italic-400.woff2", weight: "400", style: "italic" },
-    { path: "./fonts/lora-italic-600.woff2", weight: "600", style: "italic" },
+    { path: "../fonts/lora-normal-400.woff2", weight: "400", style: "normal" },
+    { path: "../fonts/lora-normal-500.woff2", weight: "500", style: "normal" },
+    { path: "../fonts/lora-normal-600.woff2", weight: "600", style: "normal" },
+    { path: "../fonts/lora-normal-700.woff2", weight: "700", style: "normal" },
+    { path: "../fonts/lora-italic-400.woff2", weight: "400", style: "italic" },
+    { path: "../fonts/lora-italic-600.woff2", weight: "600", style: "italic" },
   ],
 });
 

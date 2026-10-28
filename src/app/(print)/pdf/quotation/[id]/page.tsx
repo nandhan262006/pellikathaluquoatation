@@ -33,7 +33,21 @@ export default async function PdfQuotationPage({
   }
 
   const db = getDb();
-  const lead = (await db.select().from(estimateLead).where(eq(estimateLead.id, leadId)))[0];
+  // Light select only — the base64 PDF blob columns are huge and irrelevant
+  // to rendering; pulling them over the wire delays every regeneration.
+  const lead = (
+    await db
+      .select({
+        clientName: estimateLead.clientName,
+        clientPhone: estimateLead.clientPhone,
+        eventType: estimateLead.eventType,
+        eventName: estimateLead.eventName,
+        estimateData: estimateLead.estimateData,
+        quotationData: estimateLead.quotationData,
+      })
+      .from(estimateLead)
+      .where(eq(estimateLead.id, leadId))
+  )[0];
   if (!lead) notFound();
 
   const parse = (raw: string) => {
@@ -56,7 +70,7 @@ export default async function PdfQuotationPage({
     });
 
   return (
-    <div className="quote-print-root">
+    <div className="quote-print-root pdf-flat">
       <QuotationDocument data={data} />
     </div>
   );

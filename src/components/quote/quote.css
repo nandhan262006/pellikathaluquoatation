@@ -343,10 +343,11 @@
     overflow: visible !important;
   }
 
-  /* Hide everything except the dedicated print root (a direct body child
-     rendered via portal). display:none removes flow space entirely, so the
-     document paginates naturally from the first sheet. */
-  body > *:not(:has(.quote-print-root)) {
+  /* Hide everything except the dedicated print root (rendered via portal or
+     as a direct body child). display:none removes flow space entirely, so the
+     document paginates naturally from the first sheet. The :not() chain keeps
+     BOTH wrappers containing the root and the root element itself visible. */
+  body > *:not(:has(.quote-print-root)):not(.quote-print-root) {
     display: none !important;
   }
 
@@ -388,4 +389,30 @@
 /* Print root is hidden on screen (it exists only for the print flow) */
 .quote-print-root {
   display: none;
+}
+
+/* PDF render only: opaque paper, no live transparency. The headless renderer
+   swaps quote-art PNGs for precomposited JPEGs, so opacity must be 1 or the
+   watermark would be double-faded. Screen preview does not use .pdf-flat. */
+.pdf-flat .qpage {
+  background-image: none;
+  background-color: var(--paper);
+}
+.pdf-flat .q-watermark {
+  opacity: 1;
+}
+
+/* ==========================================================================
+   SCREEN PREVIEW PERFORMANCE
+   The admin dialog stacks 8+ full A4 pages, each with large artwork and
+   watermarks. Rasterizing all of them up front is what makes scrolling janky.
+   Let the compositor skip pages that are offscreen. Scoped to screen media:
+   Puppeteer's page.pdf() uses print media, so the PDF render is unaffected,
+   and pages keep their exact 794x1123 size via contain-intrinsic-size.
+   ========================================================================== */
+@media screen {
+  .qstack .qpage {
+    content-visibility: auto;
+    contain-intrinsic-size: 794px 1123px;
+  }
 }

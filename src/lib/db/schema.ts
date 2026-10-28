@@ -91,6 +91,8 @@ export const estimateLead = sqliteTable("EstimateLead", {
   market: text("market").notNull().default("IN"),
   estimateData: text("estimateData").notNull().default("{}"),
   quotationData: text("quotationData").notNull().default("{}"),
+  quotationPdf: text("quotationPdf"),
+  quotationPdfStamp: text("quotationPdfStamp"),
   status: text("status").notNull().default("pending"),
   createdAt: text("createdAt").notNull().default(sql`(datetime('now'))`),
 });

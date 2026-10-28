@@ -17,12 +17,10 @@ const cache = new Map<string, CacheEntry>();
 const MAX_ENTRIES = 40;
 const DEFAULT_TTL = 10 * 60 * 1000; // 10 minutes
 
-function makeKey(leadId: number, updatedAt?: number | Date | null): string {
-  if (updatedAt instanceof Date) {
-    return `${leadId}:${updatedAt.getTime()}`;
-  }
-  if (typeof updatedAt === "number") {
-    return `${leadId}:${updatedAt}`;
+function makeKey(leadId: number, stamp?: number | Date | string | null): string {
+  if (stamp instanceof Date) return `${leadId}:${stamp.getTime()}`;
+  if (typeof stamp === "number" || typeof stamp === "string") {
+    return `${leadId}:${stamp}`;
   }
   return `${leadId}:0`;
 }
@@ -40,9 +38,9 @@ function evictIfNeeded() {
 
 export function getCachedPdf(
   leadId: number,
-  updatedAt?: number | Date | null,
+  stamp?: number | Date | string | null,
 ): CachedPdf | null {
-  const key = makeKey(leadId, updatedAt);
+  const key = makeKey(leadId, stamp);
   const entry = cache.get(key);
   if (!entry) return null;
   // Check TTL
@@ -56,11 +54,11 @@ export function getCachedPdf(
 
 export function setCachedPdf(
   leadId: number,
-  updatedAt: number | Date | null | undefined,
+  stamp: number | Date | string | null | undefined,
   buf: Uint8Array,
   filename: string,
 ): CachedPdf {
-  const key = makeKey(leadId, updatedAt);
+  const key = makeKey(leadId, stamp);
   const etag = `"${createHash("sha256").update(buf).digest("hex")}"`;
   const data: CachedPdf = {
     buf,

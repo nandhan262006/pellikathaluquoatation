@@ -1,10 +1,10 @@
 import { existsSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { randomUUID } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import { writeFile, unlink, readFile } from "node:fs/promises";
 import { spawn } from "node:child_process";
-import { NextRequest } from "next/server";
+import { NextRequest, after } from "next/server";
 import { requireAdmin, getDb } from "@/lib/db-utils";
 import { estimateLead } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
@@ -15,6 +15,43 @@ export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
 const EXTRA_ARGS = ["--disable-dev-shm-usage"];
+
+/**
+ * Stamp fields: everything the print page renders from, EXCEPT the heavy
+ * base64 PDF columns. Selected on every request; the blob columns get a
+ * second targeted select only when the in-memory cache misses.
+ */
+const leadStampCols = {
+  clientName: estimateLead.clientName,
+  clientPhone: estimateLead.clientPhone,
+  eventType: estimateLead.eventType,
+  eventName: estimateLead.eventName,
+  estimateData: estimateLead.estimateData,
+  quotationData: estimateLead.quotationData,
+};
+
+/**
+ * Precomposited quote-art JPEGs are immutable build artifacts (bundled via
+ * outputFileTracingIncludes) — read each from disk once per lambda, then
+ * serve from memory on every interception.
+ */
+const flatArtCache = new Map<string, Buffer>();
+
+async function getFlatArt(name: string): Promise<Buffer | null> {
+  if (!/^[a-z0-9-]+$/i.test(name)) return null;
+  const hit = flatArtCache.get(name);
+  if (hit) return hit;
+  const file = join(process.cwd(), "public/quote-art/flat", `${name}.jpg`);
+  if (!existsSync(file)) return null;
+  const body = await readFile(file);
+  flatArtCache.set(name, body);
+  return body;
+}
+
+/** Per-generation timing so slow phases show up in the lambda logs. */
+function logTiming(phase: string, sinceMs: number) {
+  console.log(`[quote-pdf] ${phase}: +${(performance.now() - sinceMs).toFixed(0)}ms`);
+}
 
 /**
  * Warm-instance state for repeated PDF renders. Vercel lambdas freeze
@@ -109,8 +146,10 @@ async function getHealthyBrowser(): Promise<import("puppeteer-core").Browser> {
   return pdfGlobal.browserPromise;
 }
 
-/** Ghostscript is not present in the Vercel lambda; check once. */
+/** Ghostscript is not present in the Vercel lambda; check once. Set
+ * QUOTE_PDF_DISABLE_GS=1 to skip local optimization (e.g. for speed tests). */
 function isGsAvailable(): boolean {
+  if (process.env.QUOTE_PDF_DISABLE_GS === "1") return false;
   if (pdfGlobal.gsAvailable != null) return pdfGlobal.gsAvailable;
   const found = ["/usr/bin/gs", "/usr/local/bin/gs", "/bin/gs"].some((p) =>
     existsSync(p),
@@ -189,12 +228,35 @@ async function renderWithBrowser(
   lead: { clientName: string },
 ): Promise<{ buf: Uint8Array; filename: string }> {
   const { token, exp } = signPdfToken(leadId);
+  const genT0 = performance.now();
   const browser = await getHealthyBrowser();
+  logTiming("browser-ready", genT0);
   let page: import("puppeteer-core").Page | null = null;
   try {
     page = await browser.newPage();
     await page.setDefaultNavigationTimeout(45000);
     await page.setDefaultTimeout(45000);
+    await page.setRequestInterception(true);
+    page.on("request", async (req) => {
+      try {
+        const pathname = new URL(req.url()).pathname;
+        const art = pathname.match(/\/quote-art\/([^/]+)\.png$/);
+        if (art) {
+          const body = await getFlatArt(art[1]);
+          if (body) {
+            await req.respond({
+              status: 200,
+              contentType: "image/jpeg",
+              body,
+            });
+            return;
+          }
+        }
+      } catch {
+        // fall through and let Chromium fetch the original
+      }
+      await req.continue().catch(() => {});
+    });
 
     await page.goto(
       `${originBase}/pdf/quotation/${leadId}?token=${token}&exp=${exp}`,
@@ -211,6 +273,7 @@ async function renderWithBrowser(
     );
     // Short settle in the Node process so pending paints flush before print.
     await new Promise((r) => setTimeout(r, 300));
+    logTiming("page-loaded", genT0);
     const pdf = await page.pdf({
       format: "A4",
       printBackground: true,
@@ -220,6 +283,7 @@ async function renderWithBrowser(
     });
     await page.close().catch(() => {});
     page = null;
+    logTiming("pdf-printed", genT0);
 
     let optimized: Uint8Array;
     try {
@@ -228,6 +292,7 @@ async function renderWithBrowser(
       console.error("PDF optimization failed, falling back to original:", e);
       optimized = pdf;
     }
+    logTiming("ghostscript-done", genT0);
 
     const filename = `${lead.clientName.replace(/[^a-zA-Z0-9]+/g, "-") || "Client"}-Quotation.pdf`;
     return { buf: optimized, filename };
@@ -342,15 +407,57 @@ export async function GET(req: NextRequest) {
   }
 
   const db = getDb();
+  // Light select: never pull the multi-MB base64 PDF columns over the wire
+  // just to compute the cache stamp. A memory-cache hit must not touch them.
   const lead = (
-    await db.select().from(estimateLead).where(eq(estimateLead.id, id))
+    await db
+      .select(leadStampCols)
+      .from(estimateLead)
+      .where(eq(estimateLead.id, id))
   )[0];
   if (!lead) {
     return Response.json({ error: "Lead not found" }, { status: 404 });
   }
 
-  // Keyed by quotationData content; saveQuotation() invalidates on edit.
-  const cacheStamp = lead.quotationData?.length ?? 0;
+  // Hash of every field the print page can render from. A save changes
+  // quotationData, so the stamp misses and we regenerate.
+  const cacheStamp = createHash("sha256")
+    .update(
+      [
+        lead.quotationData,
+        lead.estimateData,
+        lead.clientName,
+        lead.clientPhone,
+        lead.eventType,
+        lead.eventName,
+      ].join("\0"),
+    )
+    .digest("hex");
+  const filename = `${lead.clientName.replace(/[^a-zA-Z0-9]+/g, "-") || "Client"}-Quotation.pdf`;
+
+  const fromStore = async (): Promise<Uint8Array | null> => {
+    // Targeted second select: only fetch the blob columns when the memory
+    // cache actually missed.
+    const stored = (
+      await db
+        .select({
+          quotationPdf: estimateLead.quotationPdf,
+          quotationPdfStamp: estimateLead.quotationPdfStamp,
+        })
+        .from(estimateLead)
+        .where(eq(estimateLead.id, id))
+    )[0];
+    if (!stored?.quotationPdf || stored.quotationPdfStamp !== cacheStamp) {
+      return null;
+    }
+    try {
+      const buf = Buffer.from(stored.quotationPdf, "base64");
+      if (buf.subarray(0, 5).toString() !== "%PDF-") return null;
+      return new Uint8Array(buf);
+    } catch {
+      return null;
+    }
+  };
 
   const respond = (buf: Uint8Array, filename: string, etag: string) => {
     const notModified = conditionalResponse(req, etag);
@@ -365,6 +472,12 @@ export async function GET(req: NextRequest) {
     return respond(cached.buf, cached.filename, cached.etag);
   }
 
+  const stored = await fromStore();
+  if (stored) {
+    const hit = setCachedPdf(id, cacheStamp, stored, filename);
+    return respond(hit.buf, hit.filename, hit.etag);
+  }
+
   const fwdHost =
     req.headers.get("x-forwarded-host") ?? req.nextUrl.host ?? "";
   const fwdProto =
@@ -376,9 +489,22 @@ export async function GET(req: NextRequest) {
       : new URL(req.url).origin;
 
   try {
-    const { buf, filename } = await generateQuotationPdf(id, origin, lead);
-    const { etag } = setCachedPdf(id, cacheStamp, buf, filename);
-    return respond(buf, filename, etag);
+    const { buf } = await generateQuotationPdf(id, origin, lead);
+    const hit = setCachedPdf(id, cacheStamp, buf, filename);
+    // Persist AFTER the response is flushed via after(): the multi-MB base64
+    // write to Turso must not stand between the finished PDF and the user's
+    // download. The memory + next-request DB cache cover us meanwhile.
+    after(async () => {
+      await db
+        .update(estimateLead)
+        .set({
+          quotationPdf: Buffer.from(buf).toString("base64"),
+          quotationPdfStamp: cacheStamp,
+        })
+        .where(eq(estimateLead.id, id))
+        .catch((err) => console.error("Failed to store quotation PDF:", err));
+    });
+    return respond(hit.buf, hit.filename, hit.etag);
   } catch (e) {
     console.error("Quote PDF generation failed:", e);
     return Response.json(

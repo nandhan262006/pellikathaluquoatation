@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { QuotationDocument } from "@/components/quote/quotation-document";
 import { buildQuotationData, isQuotationData } from "@/lib/quote/prefill";
@@ -40,6 +40,24 @@ export function QuotationDialog({ lead, onClose }: { lead: QuotationLead; onClos
   const [saving, setSaving] = useState(false);
   const [downloading, setDownloading] = useState(false);
   const [dirty, setDirty] = useState(false);
+  const readyPdf = useRef<Promise<Blob> | null>(null);
+
+  const loadPdf = () => {
+    if (!readyPdf.current) {
+      readyPdf.current = fetch(`/api/quote-pdf?id=${lead.id}`).then(async (res) => {
+        if (!res.ok) throw new Error(`pdf failed: ${res.status}`);
+        return res.blob();
+      });
+    }
+    return readyPdf.current;
+  };
+
+  useEffect(() => {
+    if (dirty) return;
+    loadPdf().catch(() => {
+      readyPdf.current = null;
+    });
+  }, [lead.id, dirty]); // eslint-disable-line react-hooks/exhaustive-deps -- loadPdf closes over lead.id, which is already a dep
 
   const update = (next: QuotationData) => {
     setData(next);
@@ -52,6 +70,7 @@ export function QuotationDialog({ lead, onClose }: { lead: QuotationLead; onClos
       const res = await saveQuotation(lead.id, data);
       if (res?.success) {
         toast.success("Quotation saved");
+        readyPdf.current = null;
         setDirty(false);
       } else {
         toast.error("Failed to save quotation");
@@ -73,13 +92,12 @@ export function QuotationDialog({ lead, onClose }: { lead: QuotationLead; onClos
         const res = await saveQuotation(lead.id, data);
         if (res?.success) {
           setDirty(false);
+          readyPdf.current = null;
         } else {
           throw new Error("save failed");
         }
       }
-      const res = await fetch(`/api/quote-pdf?id=${lead.id}`);
-      if (!res.ok) throw new Error(`pdf failed: ${res.status}`);
-      const blob = await res.blob();
+      const blob = await loadPdf();
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;

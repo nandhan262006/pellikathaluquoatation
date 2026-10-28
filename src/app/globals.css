@@ -258,7 +258,7 @@ html, body {
     background: #ffffff !important;
   }
 
-  body > *:not(:has(.quote-print-root)) {
+  body > *:not(:has(.quote-print-root)):not(.quote-print-root) {
     display: none !important;
   }
 
